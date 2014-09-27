@@ -2,11 +2,16 @@
 
 ####  CONFIGURABLES  ######################################################
 
+DEBUG=1
+
 # (0) SELF - The 'self' command. Has special status.
 #     (a) like `cp -r SRC DEST` - the script IS the command
 #     (b) `git -b checkout BRANCH` - the script RUNS command
 
-SELF_HELP="Skeleton CLI wireframe."    # script summary long as you like
+SELF_NAME="shkeleton - CLI shell scripting for lazy people"
+
+# script summary long as you like
+SELF_HELP="A skeletal wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing CLI argument parsing, at all."
 
 # SELF_OPTS
 
@@ -29,15 +34,15 @@ CMD_ARGS[skel]="DEST"   # define both CMD_OPTS[CMD] and CMD_ARGS[CMD] for
 
 # (2) 'fling' command with two args, one opt -- a dummy command
 
-CMD_HELP[fling]="fling love from BAR at BAZ"
-CMD_ARGS[fling]="BAR BAZ"    # space-separated string of positional args
+CMD_HELP[fling]="fling love from SRC at DEST"
+CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
 CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
 
 # (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
 
 CMD_OPTARGS[p]="POO"         # option args space-separated string
-CMD_OPTS_HELP[p]="BAR instead flings POO at BAZ"
-CMD_OPTS_HELP[t]="BAR instead tosses at BAZ"
+CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
+CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
 
 #--------------------------------------------------------------------------
@@ -51,6 +56,9 @@ function _run_self {
     for opt in "${OPTS}"; do
         case $opt in
             h)
+                _print_help
+                ;;
+            *)
                 _print_help
                 ;;
         esac
@@ -71,11 +79,12 @@ function _run_fling {
                 ;;
             p)
                 # remove leading and trailing whitespace
-                noun=`echo "${OPTARGS[$opt]}" | sed -e 's/^[ \t]*//'`
+                noun="${OPTARGS[$opt]}"
                 ;;
         esac
     done
 
     # this is what 'fling' cmd does...
-    printf "\n_run_fling:\n\t${ARGS[BAR]} ${verb} ${noun} at ${ARGS[BAZ]}\n"
+    _debug "\n_run_fling:\n"
+    printf "\n${ARGS[SRC]} ${verb} ${noun} at ${ARGS[DEST]}.\n"
 }

@@ -1,0 +1,381 @@
+#!/usr/bin/env bash
+
+####  DECLARATIONS  #######################################################
+
+declare -A SELF_OPTARGS     # key: 'self' cmd short opt char
+
+declare -A CMD_HELP         # key: CMD name
+declare -A CMD_ARGS         # key: ""
+declare -A CMD_OPTS         # key: ""
+declare -A CMD_SHORTOPTS    # key: ""
+
+declare -A CMD_LONGOPTS     # key: cmd short opt char
+declare -A CMD_OPTS_HELP    # key: ""
+declare -A CMD_OPTARGS      # key: ""
+
+# user input params parsed into following variables ...
+
+PARAM=               # system argv as array
+CMD=                 # the chosen command OR 'self'
+OPTS=                # string of short opts chosen
+
+declare -A ARGS      # positional arguments array
+declare -A OPTARGS   # associative array of opt args
+
+
+####  INITIALIZATION  #####################################################
+
+NOERR=0
+
+SCRIPT=`basename $0`
+SCRIPT_CFG="${SCRIPT}.sh"    # put your code in `SCRIPTNAME.sh`
+source "${SCRIPT_CFG}"
+
+
+# error handling
+function _err {
+    ((NOERR++))
+}
+function _exit_err {
+    printf "\nERROR"
+    [ $NOERR -ne 0 ] && printf " (${NOERR})"
+    [[ ! -z "$@" ]] && echo ": ${1}" || echo
+    echo "Try '${SCRIPT} --help' for more information."
+    exit $NOERR
+}
+
+
+# utility function - log debugging info
+function _debug {
+    [ ${DEBUG} -ne 0 ] && printf "${1}"
+}
+
+
+# utility function - parse to ARGS or OPTARGS
+function _set_arg {
+
+    local is_optargs=$1     # flag 1 if seting OPTARGS
+    local arg_key=$2        # for either CMD_ARGS[cmd] or CMD_OPTARGS[opt]
+    local arg=              # working variable
+
+    # no quote then regular single word argument
+    if [[ "${PARAM[0]:0:1}" != '"' ]]; then
+        arg="${PARAM[0]}"
+        PARAM=( ${PARAM[@]:1} )
+
+    # quoted arguments (\"words lyrics\")
+    else
+        # get 1st word in quoted arg sans the initial quote
+        arg="${PARAM[0]:1}"
+        PARAM=( ${PARAM[@]:1} )
+
+        # get words in the middle (no end quote)
+        while [[ ${#PARAM[@]} -ne 0 ]] && \
+            [[ "${PARAM[0]:(-1)}" != '"' ]]
+        do
+            arg="${arg} ${PARAM[0]}"
+            PARAM=( ${PARAM[@]:1} )
+        done
+
+        # if end quote forgotten then err out
+        if [[ ${#PARAM[@]} -eq 0 ]] && \
+            [[ "${PARAM[0]:(-1)}" != '"' ]]
+        then
+            err; _exit_err "Imbalanced quotes in argument."
+        fi
+
+        # get last word sans end quote
+        arg="${arg} ${PARAM[0]%\"}"
+        PARAM=( ${PARAM[@]:1} )
+    fi
+
+    # then set desired args array at $arg_key
+    if [[ $is_optargs -eq 0 ]]; then
+        ARGS[$arg_key]="${arg}"
+    else
+        if [[ -z "${OPTARGS}" ]]; then
+            OPTARGS[$arg_key]="${arg}"
+        else
+            OPTARGS[$arg_key]="${OPTARGS[@]} ${arg}"
+        fi
+    fi
+}
+
+
+# initialize some stuff
+function _init {
+
+    # initialize PARAM from command line
+    PARAM=( "$@" )
+
+    # initialize SELF as CMD
+    COMMANDS=( "self" "${COMMANDS[@]}" )
+    CMD_HELP[self]="${SELF_HELP}"
+    CMD_ARGS[self]="${SELF_ARGS}"
+    CMD_OPTS[self]="${SELF_OPTS}"
+
+    # initialize CMD arrays and associative arrays
+    for cmd in "${COMMANDS[@]}"; do
+        [[ -z "${CMD_OPTS[$cmd]}" ]] && continue
+
+        # init options
+        local opts=( ${CMD_OPTS[$cmd]} )
+        local optix=0
+
+        while [[ $optix -lt ${#opts[@]} ]]; do
+            opt="${opts[$optix]}"
+            CMD_SHORTOPTS[$cmd]="${CMD_SHORTOPTS[$cmd]} ${opt}"
+            ((optix++))
+            CMD_LONGOPTS[$opt]="${opts[$optix]}"
+            ((optix++))
+        done
+    done
+}
+
+
+# function to print help and return -- `man` style output
+function _print_help {
+
+    bold=`tput bold`
+    normal=`tput sgr0`
+
+    # name and usage (synopsis)
+    str="\n${bold}NAME${normal}\n\t${SELF_NAME}\n"
+    str="${str}\n${bold}SYNOPSIS${normal}\n\t${SCRIPT}"
+
+    # usage - self options
+    self_opts=( ${CMD_SHORTOPTS[self]} )
+    for opt in "${self_opts[@]}"; do
+        str="${str} [--${CMD_LONGOPTS[$opt]}]"
+    done
+
+    # usage - self args || command + opts + args
+    if [[ ! -z "${SELF_ARGS}" ]]; then
+        str="${str} ${SELF_ARGS}"
+    elif [[ ! -z "${COMMANDS[@]}" ]]; then
+        str="${str} COMMAND"
+        [[ ! -z "${CMD_OPTS[@]}" ]] && str="${str} [OPTS]"
+        [[ ! -z "${CMD_ARGS[@]}" ]] && str="${str} [ARGS]"
+    fi
+    str="${str}\n"
+
+    # self description
+    if [[ ! -z "${SELF_HELP}" ]]; then
+        str="${str}\n${bold}DESCRIPTION${normal}\n"  # "\t${SELF_HELP}\n"
+        printf "%-8s %60s" "" "${SELF_HELP}"
+    fi
+
+    # self options - expects SELF_OPTS a pairwise string
+    if [[ ! -z "${SELF_OPTS}" ]]; then
+        str="${str}\n${bold}OPTIONS${normal}\n"
+
+        # opts strings gotta be split into arrays 1st - gotta be even len
+        opts=( $SELF_OPTS )
+        optix=0
+
+        # loop over doubles - will err otherwise
+        while [ $optix -lt ${#opts[@]} ]; do
+            opt="${opts[$optix]}"
+            ((optix++))
+            str="${str}\t-${opt} --${opts[$optix]}"
+            str="${str}\t${SELF_OPTS_HELP[$opt]}\n"
+            ((optix++))
+        done
+    fi
+
+    # commands - with args and help
+    [[ $((${#COMMANDS[@]}-1)) -gt 0 ]] && \
+        str="${str}\n${bold}COMMANDS${normal}\n"
+    for cmd in "${COMMANDS[@]}"; do
+        [[ "${cmd}" == "self" ]] && continue
+        str="${str}\t${cmd} ${CMD_ARGS[$cmd]}"
+        str="${str}\t${CMD_HELP[$cmd]}\n"
+    done
+
+    # command options - with args and help
+    if [[ ! -z "${CMD_OPTS[@]}" ]]; then
+        str="${str}\n${bold}COMMAND OPTIONS${normal}\n"
+
+        # do the same as for SELF_OPTS for each of COMMANDS
+        for cmd in "${COMMANDS[@]}"; do
+            [[ -z "${CMD_OPTS[$cmd]}" ]] || \
+                [[ "${cmd}" == "self" ]] && continue
+            str="${str}\n${cmd}:\n"
+
+            cmd_opts=( ${CMD_OPTS[$cmd]} )
+            cmd_optix=0
+
+            while [[ $cmd_optix -lt ${#cmd_opts[@]} ]]; do
+                cmd_opt="${cmd_opts[$cmd_optix]}"
+                ((cmd_optix++))
+                str="${str}\t-${cmd_opt} --${cmd_opts[$cmd_optix]}"
+                [[ ! -z "{CMD_OPTARGS[$cmd_opt]}" ]] && \
+                    str="${str} ${CMD_OPTARGS[$cmd_opt]}"
+                str="${str}\t${CMD_OPTS_HELP[$cmd_opt]}\n"
+                ((cmd_optix++))
+            done
+        done
+    fi
+
+    # print the help
+    printf "${str}"
+}
+
+
+# parse command (first argument) as you like ...
+function _parse_cmd {
+    [[ "${#COMMANDS[@]}" == "0" ]] && return   # parse args and opts
+
+    # use regex matching for 1st param (command) since not complicated
+    if [[ "${COMMANDS[@]}" =~ "${PARAM[0]} " || \
+        "${COMMANDS[${#COMMANDS[@]}-1]}" == "${PARAM[0]}" ]]
+    then
+        CMD="${PARAM[0]}"
+        PARAM=( ${PARAM[@]:1} )
+    else
+        CMD='self'
+    fi
+
+    # optional debugging block
+    str="PARSE cmd:\n  cmd: ${CMD} "
+    [[ ! -z "${#PARAM[@]}" ]] && \
+        str="${str}+ [${PARAM[@]} ]\n" || str="${str}\n"
+    str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
+    _debug "${str}"
+
+    # if arguments expected then print err & exit
+    if [[ "${#PARAM[@]}" == "0" && ! -z "${CMD_ARGS[$CMD]}" ]]; then
+        _err; _exit_err "Command arguments expected."
+    fi
+
+    # if no more params don't bother parsing args and opts
+    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+}
+
+
+# parse '-' prefixed options ...
+function _parse_opts {
+    [[ "${#CMD_OPTS[@]}" == "0" ]] && return   # run cmd with args & opts
+
+    local cmd_opts=( ${CMD_SHORTOPTS[$CMD]} )
+
+    # debugging ...
+    str="PARSE opts:\n"
+
+    # loop over PARAM and consume valid opts & optargs
+    while [[ ${#PARAM[@]} -gt 0 ]] && [[ "${PARAM[0]:0:1}" == "-" ]]
+    do
+        for opt in "${cmd_opts[@]}"
+        do
+            if [[ "-${opt}" == "${PARAM[0]}" ]] || \
+                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[0]}" ]]
+            then
+                OPTS=( ${OPTS[@]} ${opt} )
+                PARAM=( ${PARAM[@]:1} )
+                cmd_optargs=( ${CMD_OPTARGS[$opt]} )
+
+                if [[ "${#cmd_optargs[@]}" != "0" ]]; then
+                    for optarg in "${cmd_optargs[@]}"; do
+                        _set_arg 1 $opt
+                    done
+
+                    if [ ${#PARAM[@]} -lt ${#cmd_optargs[@]} ]; then
+                        _err; _exit_err "Too few option arguments."
+                    fi
+                fi
+
+                # debugging ...
+                str="${str}  opt: -${opt} ${OPTARGS[$opt]}\n"
+            fi
+        done
+    done
+
+    # optional debugging ...
+    str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
+    _debug "${str}"
+
+    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+}
+
+
+# parse positional arguments as you like ...
+function _parse_args {
+    [[ "${#CMD_ARGS[@]}" == "0" ]] && return   # no args defined at all
+
+    # get pos args for CMD
+    cmd_args=( ${CMD_ARGS[$CMD]} )
+
+    # return if no args defined for $CMD
+    [[ "${#cmd_args[@]}" == "0" ]] && return
+
+    # debugging ...
+    str="PARSE args:\n"
+
+    # find arg keys for given command & build $ARGS assoc array
+    for arg in "${cmd_args[@]}"; do
+        [[ -z "${PARAM[0]}" ]] && break
+
+        _set_arg 0 $arg
+
+        # debugging ...
+        str="${str}  ${arg}=${ARGS[${arg}]}\n"
+    done
+
+    # if too few rem params for # of args for this command, then error
+    if [[ ${#ARGS[@]} -lt ${#cmd_args[@]} ]]; then
+        _err;  _exit_err "Too few positional arguments."
+    fi
+
+    # optional debugging ...
+    str="${str}  cmd args: $CMD ${cmd_args[@]}\n"
+    str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
+    _debug "${str}"
+
+    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+}
+
+
+# parameters are $CMD, $ARGS and $OPTS
+function _run_params {
+
+    if [[ ${#PARAM[@]} -ne 0 ]]; then
+        _err; _exit_err "Too many command line arguments."
+    fi
+
+    # debugging ...
+    str="RUN params:\n  [${CMD}"
+    if [[ ! -z "${OPTS[@]}" ]]; then
+        for opt in "${OPTS[@]}"; do
+            str="${str}, -${opt}"
+            [[ ! -z "${OPTARGS[$opt]}" ]] && str="${str} ${OPTARGS[$opt]}"
+        done
+    fi
+    if [[ ! -z  "${ARGS[@]}" ]]; then
+        for arg in "${ARGS[@]}"; do
+            str="${str}, ${arg}"
+        done
+    fi
+    _debug "${str}]\n"
+
+    # run the command
+    _run_${CMD}
+}
+
+
+############  MAIN  ############
+
+function _main {
+
+    # initialize & parse command line
+    _init "${@}"
+    _parse_cmd && _parse_opts && _parse_args
+
+    # error check
+    [ ${NOERR} -ne 0 ] && _print_help && \
+        _exit_err "Unable to parse command line."
+
+    # run the _run_CMD function with parsed params
+    _run_params
+}
+
+_main "$@"
