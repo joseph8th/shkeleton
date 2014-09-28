@@ -56,7 +56,9 @@ A couple pitfalls to watch out for:
   * For now, options must always precede arguments.
   * When entering multiple-word arguments, you currently need to use escaped double quotes. (This is a bug I'll try to fix someday.) Like this:
 
+```
     $ ./shkeleton fling -p poopy \"Phil Collins\" \"Batman and Robin\"
+```
 
 ### Tips
 
