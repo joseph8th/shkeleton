@@ -2,7 +2,7 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=1
+DEBUG=0
 MAN_TYPE=1    # a command by man standards
 VERSION="0.1"
 

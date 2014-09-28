@@ -58,7 +58,7 @@ A couple pitfalls to watch out for:
 
     $ ./shkeleton fling -p poopy \"Phil Collins\" \"Batman and Robin\"
 
-### Tip
+### Tips
 
 Read through both `shkeleton` files and try to understand how they work together before you start coding your new (unconfigured) script. They are both heavily annotated and explain many of these usage details in greater detail, including the proper formatting for commands, options, arguments.
 
@@ -68,4 +68,6 @@ I wanted `shkeleton` to be not just configurable, but malleable as well. That is
 
 Complicate it as much as you like. Pull requests welcome for code optimization and bug fixing.
 
-## Enjoy!
+## Version Note
+
+In this initial version, the files in the `skel` directory are just copies of the `shkeleton` files. Once I have a stable and thoroughly vetted version, I'll strip out the configuration in the `skel/shkeleton.sh` file.

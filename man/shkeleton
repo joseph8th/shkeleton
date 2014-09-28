@@ -1,0 +1,34 @@
+.\" Manpage for shkeleton.
+.\" Contact  to correct errors or typos.
+.TH man 1 "28 Sep 2014" "0.1" "shkeleton man page"
+.SH NAME
+shkeleton \- CLI shell scripting for lazy people
+.SH SYNOPSIS
+shkeleton [--help] COMMAND [OPTS] [ARGS]
+.SH DESCRIPTION
+A skeletal wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing CLI argument parsing, at all.
+.SH OPTIONS
+.IP "-h --help"
+print help message
+.SH COMMANDS
+.IP "skel DEST"
+copy './skel' to DEST, where DEST is a new directory
+.IP "fling SRC DEST"
+fling love from SRC at DEST
+.SH fling:
+.IP "-p --poo POO"
+SRC instead flings POO at DEST
+.IP "-t --toss "
+SRC instead tosses at DEST
+.SH FILES
+The 'skel' command copies files in './skel' directory (or the current scripts) to the given destination path, renaming them in the process.
+.SH "EXIT STATUS"
+Exits with status $NOERR (0 for OK, and >0 with errors).
+.SH EXAMPLES
+\&shkeleton skel /path/to/new/script
+
+shkeleton fling -t -p poo \(rs"Phil Collins\(rs" \(rs"Batman and Robin\(rs"
+.SH BUGS
+Quotes must be escaped for multiple word arguments. Only double quotes are supported.
+.SH AUTHOR
+Joseph Edwards VIII <joseph8th@notroot.us>
