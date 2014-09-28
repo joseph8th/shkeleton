@@ -8,7 +8,7 @@ Configure self, self options, commands, command options, and positional argument
 
 ## Summary
 
-The `shkeleton` script is not intended to be a framework. Rather it is a *wireframe* intended to be fleshed out. If one just needs to slap `$WHATEVER=$1` to get a positional argument for some quick script, this is overkill.
+The `shkeleton` script is not intended to be a framework. Rather it is a *wireframe* intended to be fleshed out. If one just needs to slap `WHATEVER=$1` to get a positional argument for some quick script, this is overkill.
 
 However, if one is writing a script that will see a lot of use, takes lots of arguments, or requires more complicated option parsing than `getopts` can easily provide, then `shkeleton` can speed things along.
 
@@ -60,7 +60,7 @@ A couple pitfalls to watch out for:
 
 ### Tips
 
-Read through both `shkeleton` files and try to understand how they work together before you start coding your new (unconfigured) script. They are both heavily annotated and explain many of these usage details in greater detail, including the proper formatting for commands, options, arguments.
+Read through both `shkeleton` files and try to understand how they work together before you start coding your new script. They are both heavily annotated and explain usage in greater detail, including the proper formatting for commands, options, arguments.
 
 ## Dev Approach
 
@@ -68,6 +68,6 @@ I wanted `shkeleton` to be not just configurable, but malleable as well. That is
 
 Complicate it as much as you like. Pull requests welcome for code optimization and bug fixing.
 
-## Version Note
+### Version Note
 
 In this initial version, the files in the `skel` directory are just copies of the `shkeleton` files. Once I have a stable and thoroughly vetted version, I'll strip out the configuration in the `skel/shkeleton.sh` file.
