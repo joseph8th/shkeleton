@@ -36,7 +36,7 @@ COMMANDS=( "skel" "fling" )    # array of strings
 
 # (1) 'skel' command with one arg, no opts
 
-CMD_HELP[skel]="copy skel to DEST"
+CMD_HELP[skel]="copy './skel' to DEST, where DEST is a new directory"
 CMD_ARGS[skel]="DEST"   # define both CMD_OPTS[CMD] and CMD_ARGS[CMD] for
 
 # (2) 'fling' command with two args, one opt -- a dummy command
@@ -60,9 +60,8 @@ BUGS=
 # Define each CMD function below. All your logic goes here.
 # Use parsed CMD, OPTS[] with OPTARGS[opt], and ARGS[] here.
 
-
+# _run_self should always be defined and should minimally _print_help
 function _run_self {
-
     for opt in "${OPTS}"; do
         case $opt in
             h)
@@ -75,7 +74,26 @@ function _run_self {
     done
 }
 
+# copy the skel directory and files to chosen destination
+function _run_skel {
 
+    # default try to copy out of ./skel directory (unconfigured)
+    src='./skel'
+    dest="${CMD_ARGS[DEST]}"
+
+    # if no 'skel' dir then use current directory (these files)
+    [[ ! -d "${src}" ]] && src='./'
+
+    if [[ -f "${src}/shkeleton" && -f "${src}/shkeleton.sh" ]]; then
+        echo "Copying ${src} directory to ${dest} ..."
+        cp -r "${src}" "${dest}"
+        cd "${dest}"
+    else
+        _err; _exit_err "'shkeleton' skel files not found."
+    fi
+}
+
+# example command function using options and option arguments
 function _run_fling {
 
     verb="flings"
