@@ -3,12 +3,19 @@
 ####  CONFIGURABLES  ######################################################
 
 DEBUG=1
+MAN_TYPE=1    # a command by man standards
+VERSION="0.1"
+
+# Author metadata
+AUTHOR="Joseph Edwards VIII"
+EMAIL="joseph8th@notroot.us"
 
 # (0) SELF - The 'self' command. Has special status.
 #     (a) like `cp -r SRC DEST` - the script IS the command
 #     (b) `git -b checkout BRANCH` - the script RUNS command
 
-SELF_NAME="shkeleton - CLI shell scripting for lazy people"
+# using man so prefix '-' with an escape '\'
+SELF_NAME="shkeleton \- CLI shell scripting for lazy people"
 
 # script summary long as you like
 SELF_HELP="A skeletal wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing CLI argument parsing, at all."
@@ -44,6 +51,9 @@ CMD_OPTARGS[p]="POO"         # option args space-separated string
 CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
 CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
+# Additional manpage sections (optional)
+SEE_ALSO=
+BUGS=
 
 #--------------------------------------------------------------------------
 # COMMAND FUNCTIONS - must be named `_run_CMD` for each CMD in COMMANDS

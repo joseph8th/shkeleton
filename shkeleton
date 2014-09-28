@@ -130,18 +130,31 @@ function _init {
             ((optix++))
         done
     done
+
+#    [[ ! -f "./man/${SCRIPT}" ]] && _gen_man
+    _gen_man
 }
 
 
-# function to print help and return -- `man` style output
-function _print_help {
+# function to generate man page
+function _gen_man {
 
-    bold=`tput bold`
-    normal=`tput sgr0`
+    [[ ! -d "./man" ]] && mkdir ./man
+
+    today=$(date +"%d %b %Y")
+    manf="./man/${SCRIPT}"
+
+    # man page header data
+    printf '.\\"' > $manf
+    printf " Manpage for ${SCRIPT}.\n" >> $manf
+    printf '.\\"' >> $manf
+    printf " Contact ${EMAIL} to correct errors or typos.\n" >> $manf
+
+    str="${str}.TH man ${MAN_TYPE} \"${today}\" \"${VERSION}\" \"${SCRIPT} man page\"\n"
 
     # name and usage (synopsis)
-    str="\n${bold}NAME${normal}\n\t${SELF_NAME}\n"
-    str="${str}\n${bold}SYNOPSIS${normal}\n\t${SCRIPT}"
+    str="${str}.SH NAME\n${SELF_NAME}\n"
+    str="${str}.SH SYNOPSIS\n${SCRIPT}"
 
     # usage - self options
     self_opts=( ${CMD_SHORTOPTS[self]} )
@@ -161,13 +174,12 @@ function _print_help {
 
     # self description
     if [[ ! -z "${SELF_HELP}" ]]; then
-        str="${str}\n${bold}DESCRIPTION${normal}\n"  # "\t${SELF_HELP}\n"
-        printf "%-8s %60s" "" "${SELF_HELP}"
+        str="${str}.SH DESCRIPTION\n${SELF_HELP}\n"
     fi
 
     # self options - expects SELF_OPTS a pairwise string
     if [[ ! -z "${SELF_OPTS}" ]]; then
-        str="${str}\n${bold}OPTIONS${normal}\n"
+        str="${str}.SH OPTIONS\n"
 
         # opts strings gotta be split into arrays 1st - gotta be even len
         opts=( $SELF_OPTS )
@@ -177,30 +189,29 @@ function _print_help {
         while [ $optix -lt ${#opts[@]} ]; do
             opt="${opts[$optix]}"
             ((optix++))
-            str="${str}\t-${opt} --${opts[$optix]}"
-            str="${str}\t${SELF_OPTS_HELP[$opt]}\n"
+            str="${str}.IP \"-${opt} --${opts[$optix]}\"\n"
+            str="${str}${SELF_OPTS_HELP[$opt]}\n"
             ((optix++))
         done
     fi
 
     # commands - with args and help
     [[ $((${#COMMANDS[@]}-1)) -gt 0 ]] && \
-        str="${str}\n${bold}COMMANDS${normal}\n"
+        str="${str}.SH COMMANDS\n"
     for cmd in "${COMMANDS[@]}"; do
         [[ "${cmd}" == "self" ]] && continue
-        str="${str}\t${cmd} ${CMD_ARGS[$cmd]}"
-        str="${str}\t${CMD_HELP[$cmd]}\n"
+        str="${str}.IP \"${cmd} ${CMD_ARGS[$cmd]}\"\n"
+        str="${str}${CMD_HELP[$cmd]}\n"
     done
 
     # command options - with args and help
     if [[ ! -z "${CMD_OPTS[@]}" ]]; then
-        str="${str}\n${bold}COMMAND OPTIONS${normal}\n"
 
         # do the same as for SELF_OPTS for each of COMMANDS
         for cmd in "${COMMANDS[@]}"; do
             [[ -z "${CMD_OPTS[$cmd]}" ]] || \
                 [[ "${cmd}" == "self" ]] && continue
-            str="${str}\n${cmd}:\n"
+            str="${str}.SH ${cmd}:\n"
 
             cmd_opts=( ${CMD_OPTS[$cmd]} )
             cmd_optix=0
@@ -208,17 +219,23 @@ function _print_help {
             while [[ $cmd_optix -lt ${#cmd_opts[@]} ]]; do
                 cmd_opt="${cmd_opts[$cmd_optix]}"
                 ((cmd_optix++))
-                str="${str}\t-${cmd_opt} --${cmd_opts[$cmd_optix]}"
+                str="${str}.IP \"-${cmd_opt} --${cmd_opts[$cmd_optix]}"
                 [[ ! -z "{CMD_OPTARGS[$cmd_opt]}" ]] && \
                     str="${str} ${CMD_OPTARGS[$cmd_opt]}"
-                str="${str}\t${CMD_OPTS_HELP[$cmd_opt]}\n"
+                str="${str}\"\n${CMD_OPTS_HELP[$cmd_opt]}\n"
                 ((cmd_optix++))
             done
         done
     fi
 
     # print the help
-    printf "${str}"
+    printf "${str}" >> "./man/${SCRIPT}"
+}
+
+
+# function to print help and return
+function _print_help {
+    man "./man/${SCRIPT}"
 }
 
 
