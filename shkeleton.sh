@@ -2,7 +2,7 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=0
+DEBUG=1
 MAN_TYPE=1    # a command by man standards
 VERSION="0.1"
 
@@ -12,7 +12,7 @@ AUTHOR_EMAIL="joseph8th@notroot.us"
 
 # (0) SELF - The 'self' command. Has special status.
 #     (a) like `cp -r SRC DEST` - the script IS the command
-#     (b) `git -b checkout BRANCH` - the script RUNS command
+#     (b) like `git -b checkout BRANCH` - the script RUNS command
 
 # using man so prefix '-' with an escape '\'
 SELF_NAME="${SCRIPT} \- CLI shell scripting for lazy people"
@@ -57,7 +57,7 @@ ENVIRONMENT=
 EXIT_STATUS="Exits with status \$NOERR (0 for OK, and >0 with errors)."
 EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
 EXAMPLE_02="${SCRIPT} fling -t -p poo \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
-EXAMPLES="\&${EXAMPLE_01}\n\n${EXAMPLE_02}"
+EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
 BUGS="Quotes must be escaped for multiple word arguments. Only double quotes are supported."
 SEE_ALSO=
 
