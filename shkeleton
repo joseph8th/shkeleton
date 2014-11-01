@@ -51,57 +51,6 @@ function _debug {
 }
 
 
-# utility function - parse to ARGS or OPTARGS
-function _set_arg {
-
-    local is_optargs=$1     # flag 1 if seting OPTARGS
-    local arg_key=$2        # for either CMD_ARGS[cmd] or CMD_OPTARGS[opt]
-    local arg=              # working variable
-
-    # no quote then regular single word argument
-    if [[ "${PARAM[0]:0:1}" != '"' ]]; then
-        arg="${PARAM[0]}"
-        PARAM=( ${PARAM[@]:1} )
-
-    # quoted arguments (\"words lyrics\")
-    else
-        # get 1st word in quoted arg sans the initial quote
-        arg="${PARAM[0]:1}"
-        PARAM=( ${PARAM[@]:1} )
-
-        # get words in the middle (no end quote)
-        while [[ ${#PARAM[@]} -ne 0 ]] && \
-            [[ "${PARAM[0]:(-1)}" != '"' ]]
-        do
-            arg="${arg} ${PARAM[0]}"
-            PARAM=( ${PARAM[@]:1} )
-        done
-
-        # if end quote forgotten then err out
-        if [[ ${#PARAM[@]} -eq 0 ]] && \
-            [[ "${PARAM[0]:(-1)}" != '"' ]]
-        then
-            err; _exit_err "Imbalanced quotes in argument."
-        fi
-
-        # get last word sans end quote
-        arg="${arg} ${PARAM[0]%\"}"
-        PARAM=( ${PARAM[@]:1} )
-    fi
-
-    # then set desired args array at $arg_key
-    if [[ $is_optargs -eq 0 ]]; then
-        ARGS[$arg_key]="${arg}"
-    else
-        if [[ -z "${OPTARGS}" ]]; then
-            OPTARGS[$arg_key]="${arg}"
-        else
-            OPTARGS[$arg_key]="${OPTARGS[@]} ${arg}"
-        fi
-    fi
-}
-
-
 # function to generate man page
 function _gen_man {
 
@@ -258,6 +207,57 @@ function _init {
 
 ####  COMMAND-LINE PARSING  ###############################################
 
+# utility function - parse to ARGS or OPTARGS
+function _set_arg {
+
+    local arg_key=$1        # for either CMD_ARGS[cmd] or CMD_OPTARGS[opt]
+    local is_optargs=$2     # flag 1 if seting OPTARGS
+    local arg=              # working variable
+
+    # no quote then regular single word argument
+    if [[ "${PARAM[0]:0:1}" != '"' ]]; then
+        arg="${PARAM[0]}"
+        PARAM=( ${PARAM[@]:1} )
+
+    # quoted arguments (\"words lyrics\")
+    else
+        # get 1st word in quoted arg sans the initial quote
+        arg="${PARAM[0]:1}"
+        PARAM=( ${PARAM[@]:1} )
+
+        # get words in the middle (no end quote)
+        while [[ ${#PARAM[@]} -ne 0 ]] && \
+            [[ "${PARAM[0]:(-1)}" != '"' ]]
+        do
+            arg="${arg} ${PARAM[0]}"
+            PARAM=( ${PARAM[@]:1} )
+        done
+
+        # if end quote forgotten then err out
+        if [[ ${#PARAM[@]} -eq 0 ]] && \
+            [[ "${PARAM[0]:(-1)}" != '"' ]]
+        then
+            err; _exit_err "Imbalanced quotes in argument."
+        fi
+
+        # get last word sans end quote
+        arg="${arg} ${PARAM[0]%\"}"
+        PARAM=( ${PARAM[@]:1} )
+    fi
+
+    # then set desired args array at $arg_key
+    if [[ $is_optargs -ne 1 ]]; then
+        ARGS[$arg_key]="${arg}"
+    else
+        if [[ -z "${#OPTARGS[@]}" ]]; then
+            OPTARGS[$arg_key]="${arg}"
+        else
+            OPTARGS[$arg_key]="${OPTARGS[@]} ${arg}"
+        fi
+    fi
+}
+
+
 # parse command (first argument) as you like ...
 function _parse_cmd {
     [[ "${#COMMANDS[@]}" == "0" ]] && return   # parse args and opts
@@ -312,7 +312,7 @@ function _parse_opts {
 
                 if [[ "${#cmd_optargs[@]}" != "0" ]]; then
                     for optarg in "${cmd_optargs[@]}"; do
-                        _set_arg 1 $opt
+                        _set_arg $opt 1
                     done
 
                     if [ ${#PARAM[@]} -lt ${#cmd_optargs[@]} ]; then
@@ -351,7 +351,7 @@ function _parse_args {
     for arg in "${cmd_args[@]}"; do
         [[ -z "${PARAM[0]}" ]] && break
 
-        _set_arg 0 $arg
+        _set_arg $arg 0
 
         # debugging ...
         str="${str}  ${arg}=${ARGS[${arg}]}\n"
