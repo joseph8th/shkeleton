@@ -1,10 +1,6 @@
 .\" Manpage for shkeleton.
 .\" Contact  to correct errors or typos.
-.TH man 1 "01 Nov 2014" "0.2" "shkeleton man page"
-.SH NAME
-shkeleton \- CLI shell scripting for lazy people
-.SH SYNOPSIS
-shkeleton [--help] COMMAND [OPTS] [ARGS]
+] COMMAND [OPTS] [ARGS]
 .SH DESCRIPTION
 A skeletal wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing CLI argument parsing, at all.
 .SH OPTIONS

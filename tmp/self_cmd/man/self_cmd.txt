@@ -1,4 +1,4 @@
-man(1)                                                                         self_cmd man page                                                                         man(1)
+man(1)                                                               self_cmd man page                                                               man(1)
 
 
 
@@ -9,9 +9,9 @@ SYNOPSIS
        self_cmd [--help ] [--version ] [--baz POO CAT] FOO BAR
 
 DESCRIPTION
-       A  skeletal  wireframe  to  speed  development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line
-       scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing  CLI  argu‐
-       ment parsing, at all.
+       A  skeletal  wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the sim‐
+       plest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or  when
+       one doesn't feel like doing CLI argument parsing, at all.
 
 OPTIONS
        -h --help
@@ -42,4 +42,4 @@ AUTHOR
 
 
 
-0.2                                                                               02 Nov 2014                                                                            man(1)
+0.2                                                                     02 Nov 2014                                                                  man(1)

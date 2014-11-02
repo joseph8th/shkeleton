@@ -73,17 +73,29 @@ SEE_ALSO=
 
 # _run_self should always be defined and should minimally _print_help
 function _run_self {
+
+    optargs=
+
     for opt in "${OPTS}"; do
         case $opt in
             h)
-                _print_help
+                _print_help && exit
                 ;;
             v)
-                echo "$SCRIPT version $VERSION"
+                echo "$SCRIPT version $VERSION" && exit
+                ;;
+            b)
+                optargs=( ${OPTARGS[b]} )
+                optarg1=${optargs[0]}
+                optarg2=${optargs[1]}
                 ;;
             *)
-                _print_help
+                [[ -z ${#ARGS[@]} ]] && _print_help && exit 1
                 ;;
         esac
     done
+
+    printf "Args:\n  ${ARGS[FOO]}\n  ${ARGS[BAR]}\n"
+    [[ ! -z ${#optargs[@]} ]] && \
+        printf "OptArgs:\n  ${optarg1}\n  ${optarg2}\n"
 }
