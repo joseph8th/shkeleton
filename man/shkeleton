@@ -27,7 +27,7 @@ Exits with status $NOERR (0 for OK, and >0 with errors).
 .SH EXAMPLES
 \&shkeleton skel /path/to/new/script
 
-shkeleton fling -t -p poo \(rs"Phil Collins\(rs" \(rs"Batman and Robin\(rs"
+\&shkeleton fling -t -p poo \(rs"Phil Collins\(rs" \(rs"Batman and Robin\(rs"
 .SH BUGS
 Quotes must be escaped for multiple word arguments. Only double quotes are supported.
 .SH AUTHOR

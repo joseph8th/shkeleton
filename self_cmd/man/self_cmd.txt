@@ -1,0 +1,45 @@
+man(1)                                                                         self_cmd man page                                                                         man(1)
+
+
+
+NAME
+       self_cmd - CLI shell scripting for lazy people
+
+SYNOPSIS
+       self_cmd [--help ] [--version ] [--baz POO CAT] FOO BAR
+
+DESCRIPTION
+       A  skeletal  wireframe  to  speed  development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line
+       scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing  CLI  argu‐
+       ment parsing, at all.
+
+OPTIONS
+       -h --help
+              print help message and exit
+
+       -v --version
+              print version and exit
+
+       -b --baz POO CAT
+              optional: baz POO CAT
+
+FILES
+       The 'skel' command copies files in './skel' directory (or the current scripts) to the given destination path, renaming them in the process.
+
+EXIT STATUS
+       Exits with status $NOERR (0 for OK, and >0 with errors).
+
+EXAMPLES
+       self_cmd skel /path/to/new/script
+
+       self_cmd fling -t -p poo \"Phil Collins\" \"Batman and Robin\"
+
+BUGS
+       Quotes must be escaped for multiple word arguments. Only double quotes are supported.
+
+AUTHOR
+       Joseph Edwards VIII <joseph8th@notroot.us>
+
+
+
+0.2                                                                               02 Nov 2014                                                                            man(1)

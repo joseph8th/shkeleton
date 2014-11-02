@@ -2,9 +2,9 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=0
+DEBUG=1
 MAN_TYPE=1    # a command by man standards
-VERSION="0.1"
+VERSION="0.2"
 
 # Author metadata
 AUTHOR="Joseph Edwards VIII"
@@ -12,7 +12,7 @@ AUTHOR_EMAIL="joseph8th@notroot.us"
 
 # (0) SELF - The 'self' command. Has special status.
 #     (a) like `cp -r SRC DEST` - the script IS the command
-#     (b) `git -b checkout BRANCH` - the script RUNS command
+#     (b) like `git -b checkout BRANCH` - the script RUNS command
 
 # using man so prefix '-' with an escape '\'
 SELF_NAME="${SCRIPT} \- CLI shell scripting for lazy people"
@@ -47,7 +47,7 @@ CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
 
 # (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
 
-CMD_OPTARGS[p]="POO"         # option args space-separated string
+CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
 CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
 CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
@@ -57,7 +57,7 @@ ENVIRONMENT=
 EXIT_STATUS="Exits with status \$NOERR (0 for OK, and >0 with errors)."
 EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
 EXAMPLE_02="${SCRIPT} fling -t -p poo \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
-EXAMPLES="\&${EXAMPLE_01}\n\n${EXAMPLE_02}"
+EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
 BUGS="Quotes must be escaped for multiple word arguments. Only double quotes are supported."
 SEE_ALSO=
 
@@ -106,7 +106,8 @@ function _run_skel {
 function _run_fling {
 
     verb="flings"
-    noun="love"
+    noun1="love"
+    noun2="flowers"
 
     # loop over OPTS + OPTARGS parsed, but *validate* here in `run_CMD`
     for opt in "${OPTS[@]}"; do
@@ -115,13 +116,14 @@ function _run_fling {
                 verb="tosses"
                 ;;
             p)
-                # remove leading and trailing whitespace
-                noun="${OPTARGS[$opt]}"
+                optargs=( ${OPTARGS[$opt]} )
+                noun1="${optargs[0]}"
+                noun2="${optargs[1]}"
                 ;;
         esac
     done
 
     # this is what 'fling' cmd does...
     _debug "\n_run_fling:\n"
-    printf "\n${ARGS[SRC]} ${verb} ${noun} at ${ARGS[DEST]}.\n"
+    printf "\n${ARGS[SRC]} ${verb} ${noun1} and ${noun2} at ${ARGS[DEST]}.\n"
 }
