@@ -19,7 +19,7 @@ Basically, I wanted something more like Python's `argparse` for `bash`.
     git clone git@github.com:joseph8th/shkeleton.git
     cd shkeleton
 
-To copy a bare-bones, unconfigured copy of `cli-skel.sh` to a new path, just do:
+To copy a bare-bones, unconfigured copy of `shkeleton` to a new path, just do:
 
     ./shkeleton skel DEST
 
@@ -33,7 +33,7 @@ To use the installer/example `shkeleton` as the skeleton CLI, just copy the `shk
 
     cp shkeleton* DEST
 
-Then open in your favorite text editor (emacs, right?!?) and start reading. Also, open `shkeleton.sh` to see an example configuration and function definitions.
+Then open in your favorite text editor (`emacs`, right?!?) and start reading. Also, open `shkeleton.sh` to see an example configuration and function definitions.
 
 ## Usage
 
@@ -45,20 +45,32 @@ Install a copy of `shkeleton` to your desired `newscript` directory as described
 
 ### Use Cases
 
-  1. Like `cp -r SRC DEST` - the script **IS** the command (`cp`).
-  2. Like `git checkout -b NEWBRANCH` - the script **RUNS** the command (`checkout`).
+  1. **self-as-command** mode: like `cp -r SRC DEST` the script **IS** the command (`cp`).
+  2. **sub-command** mode: like `git checkout -b NEWBRANCH` the script **RUNS** the command (`checkout`).
 
 ### Pitfalls
 
 A couple pitfalls to watch out for:
 
-  * If defining `COMMANDS` array, then don't define `SELF_ARGS` string.
+  * If defining `COMMANDS` array, then don't define `SELF_ARGS` string. Instead define `CMD_ARGS` per command.
   * For now, options must always precede arguments.
-  * When entering multiple-word arguments, you currently need to use escaped double quotes. (This is a bug I'll try to fix someday.) Like this:
+  * When entering multiple-word positional arguments, you currently need to use escaped double quotes. (This is a bug I'll try to fix someday.) Also, multiple-word arguments are NOT currently supported for **option arguments**.
+
+For example on this last pitfall... this is OK:
 
 ```
-    $ ./shkeleton fling -p poopy \"Phil Collins\" \"Batman and Robin\"
+    $ ./shkeleton fling --poo poopy litter \"Phil Collins\" \"Batman and Robin\"
 ```
+
+And this is *not* OK:
+
+```
+    $ ./shkeleton fling -p \"dog poopy\" \"cat litter\" Batman Robin
+```
+
+### Example of Self-as-Command
+
+The included `example-self-cmd` directory contains an `example-self-cmd.sh` configuration file that demonstrates how to properly use `shkeleton` in self-as-command mode. The `example-self-cmd` file is just a copy of `shkeleton` itself.
 
 ### Tips
 
@@ -72,4 +84,4 @@ Complicate it as much as you like. Pull requests welcome for code optimization a
 
 ### Version Note
 
-In this initial version, the files in the `skel` directory are just copies of the `shkeleton` files. Once I have a stable and thoroughly vetted version, I'll strip out the configuration in the `skel/shkeleton.sh` file.
+In these alpha versions, the files in the `skel` directory are just copies of the `shkeleton` files. Once I have a stable and thoroughly vetted version, I'll strip out the configuration in the `skel/shkeleton.sh` file.
