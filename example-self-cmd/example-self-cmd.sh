@@ -2,7 +2,8 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=1
+DEBUG=0
+MAN_HELP=1    # 0=text help, 1=man help
 MAN_TYPE=1    # a command by man standards
 VERSION="0.2"
 
@@ -39,32 +40,25 @@ SELF_ARGS="FOO BAR"    # string: if COMMANDS defined, then leave empty
 # COMMANDS=( "skel" "fling" )    # array of strings
 COMMANDS=
 
-# (1) 'skel' command with one arg, no opts
+# (ex.) 'cmd' command with two args plus opts
 
-# CMD_HELP[skel]="copy './skel' to DEST, where DEST is a new directory"
-# CMD_ARGS[skel]="DEST"   # define both CMD_OPTS[CMD] and CMD_ARGS[CMD] for
+# CMD_HELP[cmd]="command help string""
+# CMD_ARGS[cmd]="ARG1 ARG2"    # space-separated string of positional args
 
-# (2) 'fling' command with two args, one opt -- a dummy command
-
-# CMD_HELP[fling]="fling love from SRC at DEST"
-# CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
-# CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
-
-# (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
-
-# CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
-# CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
-# CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
+# CMD_OPTS[cmd]="f foo b bar"    # string of pairwise short-long opts
+# CMD_OPTARGS[f]="POO BAH"       # option args space-separated string
+# CMD_OPTS_HELP[f]="foo with POO and BAH"
+# CMD_OPTS_HELP[b]="bar flag - no args"
 
 # Additional manpage sections (optional)
-FILES="The 'skel' command copies files in './skel' directory (or the current scripts) to the given destination path, renaming them in the process."
+FILES="The ${SCRIPT} script operates directly on arguments FOO and BAR, with optional --baz POO CAT."
 ENVIRONMENT=
 EXIT_STATUS="Exits with status \$NOERR (0 for OK, and >0 with errors)."
-EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
-EXAMPLE_02="${SCRIPT} fling -t -p poo \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
+EXAMPLE_01="${SCRIPT} words lyrics"
+EXAMPLE_02="${SCRIPT} --baz dumdum yukyuk \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
 EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
-BUGS="Quotes must be escaped for multiple word arguments. Only double quotes are supported."
-SEE_ALSO=
+BUGS="* Quotes must be escaped for multiple-word positional arguments.\n\n* Only double quotes are supported.\n\n* Multiple-word option arguments are NOT supported."
+SEE_ALSO="shkeleton"
 
 ####  COMMAND FUNCTIONS  ##################################################
 # Must be named `_run_CMD` for each CMD in COMMANDS.
@@ -74,6 +68,7 @@ SEE_ALSO=
 # _run_self should always be defined and should minimally _print_help
 function _run_self {
 
+    # when using self-as-command, parse the optargs here
     optargs=
 
     for opt in "${OPTS}"; do

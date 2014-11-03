@@ -78,7 +78,7 @@ function _gen_man {
         str="${str} [--${CMD_LONGOPTS[$opt]}"
         [[ ! -z "${SELF_OPTARGS[@]}" ]] && \
             str="${str} ${SELF_OPTARGS[$opt]}]" || \
-            str="]"
+            str="${str}]"
     done
 
     # usage - self args || command + opts + args
@@ -159,6 +159,8 @@ function _gen_man {
         str="${str}.SH AUTHOR\n${AUTHOR}" && \
         [[ ! -z "${AUTHOR_EMAIL}" ]] && \
         str="${str} <${AUTHOR_EMAIL}>\n" || str="${str}\n"
+    [[ ! -z "${SEE_ALSO}" ]] && \
+        str="${str}.SH \"SEE ALSO\"\n${SEE_ALSO}\n"
 
     # make the manpage
     printf "${str}" >> "./man/${SCRIPT}"
@@ -167,7 +169,7 @@ function _gen_man {
 
 # function to print help and return
 function _print_help {
-    if [[ ${MAN_TYPE} -eq 0 ]]; then
+    if [[ ${MAN_HELP} -ne 0 ]]; then
         man "./man/${SCRIPT}"
     else
         echo && man "./man/${SCRIPT}" > "./man/${SCRIPT}.txt" && \

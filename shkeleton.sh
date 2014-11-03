@@ -2,7 +2,8 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=1
+DEBUG=0
+MAN_HELP=1    # 0=text help, 1=man help
 MAN_TYPE=1    # a command by man standards
 VERSION="0.2"
 
@@ -56,7 +57,7 @@ FILES="The 'skel' command copies files in './skel' directory (or the current scr
 ENVIRONMENT=
 EXIT_STATUS="Exits with status \$NOERR (0 for OK, and >0 with errors)."
 EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
-EXAMPLE_02="${SCRIPT} fling -t -p poo \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
+EXAMPLE_02="${SCRIPT} fling -t -p poo dirt \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
 EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
 BUGS="Quotes must be escaped for multiple word arguments. Only double quotes are supported."
 SEE_ALSO=
