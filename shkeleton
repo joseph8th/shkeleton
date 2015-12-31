@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-####  DECLARATIONS  #######################################################
+####  DECLARATIONS  ##################################################
 
-declare -A SELF_OPTS_HELP   # key: 'self' cmd short opt char
-declare -A SELF_OPTARGS     # key: ""
+declare -A SELF_OPTS_HELP        # key: 'self' cmd short opt char
+declare -A SELF_OPTARGS          # key: ""
+declare -a SELF_SHORTOPTS_NOARG  # key: cmd short opt char
 
-declare -A CMD_HELP         # key: CMD name
-declare -A CMD_ARGS         # key: ""
-declare -A CMD_OPTS         # key: ""
-declare -A CMD_SHORTOPTS    # key: ""
-
-declare -A CMD_LONGOPTS     # key: cmd short opt char
-declare -A CMD_OPTS_HELP    # key: ""
-declare -A CMD_OPTARGS      # key: ""
+declare -A CMD_HELP              # key: CMD name
+declare -A CMD_ARGS              # key: ""
+declare -A CMD_OPTS              # key: ""
+declare -A CMD_SHORTOPTS         # key: ""
+declare -A CMD_LONGOPTS          # key: cmd short opt char
+declare -A CMD_OPTS_HELP         # key: ""
+declare -A CMD_OPTARGS           # key: ""
 
 # user input params parsed into following variables ...
 
@@ -23,36 +23,79 @@ OPTS=                # string of short opts chosen
 declare -A ARGS      # positional arguments array
 declare -A OPTARGS   # associative array of opt args
 
-# plus some definitions including sourcing user-configured stuff
-NOERR=0
+# some global definitions including sourcing user code ...
+
+ERRNO=0
 PARAMIX=0            # current index of $PARAM
 ARGIX=0              # current index of ARGS in PARAM
 
-SCRIPT=`basename $0`
-SCRIPT_SH="${SCRIPT}.sh"    # put your code in ${SCRIPT}.sh
+readonly SCRIPT=`basename $0`
+readonly SCRIPT_SH="${SCRIPT}.sh"    # put your code in ${SCRIPT}.sh
 source "${SCRIPT_SH}"
 
 
-####  UTILITY FUNCTIONS  ##################################################
+####  UTILITY FUNCTIONS  #############################################
+
+function _is_empty {
+    local var="$1"
+    [[ -z "$var" ]]
+}
+
+function _is_zero {
+    local var=$1
+    [[ $var -eq 0 ]]
+}
+
+function _greater_than {
+    local x=$1; shift
+    local y=$1
+    [[ $x -gt $y ]]
+}
+
+function _less_than {
+    local x=$1; shift
+    local y=$1
+    [[ $x -lt $y ]]
+}
+
+function _less_than_or_equal {
+    local x=$1; shift
+    local y=$1
+    [[ $x -le $y ]]
+}
+
+# pass vars like: _in_array "$value" array[@]
+function _in_array {
+    local value=$1; shift
+    declare -a array=("${!1}")
+    [[ " ${array[@]} " =~ " ${value} " ]]
+}
+
+function _str_equal {
+    local str1=$1; shift
+    local str2=$1
+    [[ "$str1" == "$str2" ]]
+}
 
 # error handling
 function _err {
-    ((NOERR++))
+    ((ERRNO++))
 }
+
 function _exit_err {
-    printf "\nERROR"
-    [ $NOERR -ne 0 ] && printf " (${NOERR})"
-    [[ ! -z "$@" ]] && echo ": ${1}" || echo
+    local msg="$@"
+    _is_zero $ERRNO && exit
+    ! _is_empty "$msg" && printf "\nERROR (${ERRNO}): $msg\n"
     echo "Try '${SCRIPT} --help' for more information."
-    exit $NOERR
+    exit $ERRNO
 }
 
-
-# utility function - log debugging info
+# output debugging info
 function _debug {
-    [ ${DEBUG} -ne 0 ] && printf "${1}"
+    ! _is_zero ${DEBUG} && printf "${1}"
 }
 
+####  HELP FUNCTIONS  ################################################
 
 # function to generate man page
 function _gen_man {
@@ -78,68 +121,69 @@ function _gen_man {
     self_opts=( ${CMD_SHORTOPTS[self]} )
     for opt in "${self_opts[@]}"; do
         str="${str} [--${CMD_LONGOPTS[$opt]}"
-        [[ ! -z "${SELF_OPTARGS[@]}" ]] && \
-            str="${str} ${SELF_OPTARGS[$opt]}]" || \
-            str="${str}]"
+        ! _is_empty "${SELF_OPTARGS[@]}" \
+            && str="${str} ${SELF_OPTARGS[$opt]}]" \
+            || str="${str}]"
     done
 
     # usage - self args || command + opts + args
-    if [[ ! -z "${SELF_ARGS}" ]]; then
+    if ! _is_empty "${SELF_ARGS}"; then
         str="${str} ${SELF_ARGS}"
-    elif [[ ! -z "${COMMANDS[@]}" ]]; then
+    elif ! _is_empty "${COMMANDS[@]}"; then
         str="${str} COMMAND"
-        [[ ! -z "${CMD_OPTS[@]}" ]] && str="${str} [OPTS]"
-        [[ ! -z "${CMD_ARGS[@]}" ]] && str="${str} [ARGS]"
+        ! _is_empty "${CMD_OPTS[@]}" && str="${str} [OPTS]"
+        ! _is_empty "${CMD_ARGS[@]}" && str="${str} [ARGS]"
     fi
     str="${str}\n"
 
     # self description
-    if [[ ! -z "${SELF_HELP}" ]]; then
+    if ! _is_empty "${SELF_HELP}"; then
         str="${str}.SH DESCRIPTION\n${SELF_HELP}\n"
     fi
 
     # self options - with args and help
-    if [[ ! -z "${SELF_OPTS}" ]]; then
+    if ! _is_empty "${SELF_OPTS}"; then
         str="${str}.SH OPTIONS\n"
 
         self_opts=( ${CMD_SHORTOPTS[self]} )
         for opt in "${self_opts[@]}"; do
             str="${str}.IP \"-${opt} --${CMD_LONGOPTS[$opt]}"
-            [[ ! -z "${SELF_OPTARGS[$opt]}" ]] && \
-                str="${str} ${SELF_OPTARGS[$opt]}\"\n" || \
-                str="${str}\"\n"
+            ! _is_empty "${SELF_OPTARGS[$opt]}" \
+                && str="${str} ${SELF_OPTARGS[$opt]}\"\n" \
+                || str="${str}\"\n"
             str="${str}${SELF_OPTS_HELP[$opt]}\n"
         done
     fi
 
     # commands - with args and help
-    if [[ $((${#COMMANDS[@]}-1)) -gt 0 ]]; then
+    if _greater_than $((${#COMMANDS[@]}-1)) 0; then
         str="${str}.SH COMMANDS\n"
     fi
     for cmd in "${COMMANDS[@]}"; do
-        [[ "${cmd}" == "self" ]] && continue
+        _str_equal "${cmd}" "self" && continue
         str="${str}.IP \"${cmd} ${CMD_ARGS[$cmd]}\"\n"
         str="${str}${CMD_HELP[$cmd]}\n"
     done
 
     # command options - with args and help
-    if [[ ! -z "${CMD_OPTS[@]}" ]]; then
+    if ! _is_empty "${CMD_OPTS[@]}"; then
 
         # do the same as for SELF_OPTS for each of COMMANDS
         for cmd in "${COMMANDS[@]}"; do
-            [[ -z "${CMD_OPTS[$cmd]}" ]] || \
-                [[ "${cmd}" == "self" ]] && continue
+            _is_empty "${CMD_OPTS[$cmd]}" \
+                || _str_equal "${cmd}" "self" \
+                && continue
             str="${str}.SH ${cmd}:\n"
 
             cmd_opts=( ${CMD_OPTS[$cmd]} )
             cmd_optix=0
 
-            while [[ $cmd_optix -lt ${#cmd_opts[@]} ]]; do
+            while _less_than $cmd_optix ${#cmd_opts[@]}; do
                 cmd_opt="${cmd_opts[$cmd_optix]}"
                 ((cmd_optix++))
                 str="${str}.IP \"-${cmd_opt} --${cmd_opts[$cmd_optix]}"
-                [[ ! -z "{CMD_OPTARGS[$cmd_opt]}" ]] && \
-                    str="${str} ${CMD_OPTARGS[$cmd_opt]}"
+                ! _is_empty "{CMD_OPTARGS[$cmd_opt]}" \
+                    && str="${str} ${CMD_OPTARGS[$cmd_opt]}"
                 str="${str}\"\n${CMD_OPTS_HELP[$cmd_opt]}\n"
                 ((cmd_optix++))
             done
@@ -147,31 +191,31 @@ function _gen_man {
     fi
 
     # additonal manpage sections - define more in ${SCRIPT}.sh and add here
-    [[ ! -z "${FILES}" ]] && \
-        str="${str}.SH FILES\n${FILES}\n"
-    [[ ! -z "${ENVIRONMENT}" ]] && \
-        str="${str}.SH ENVIRONMENT\n${ENVIRONMENT}\n"
-    [[ ! -z "${EXIT_STATUS}" ]] && \
-        str="${str}.SH \"EXIT STATUS\"\n${EXIT_STATUS}\n"
-    [[ ! -z "${EXAMPLES}" ]] && \
-        str="${str}.SH EXAMPLES\n${EXAMPLES}\n"
-    [[ ! -z "${BUGS}" ]] && \
-        str="${str}.SH BUGS\n${BUGS}\n"
-    [[ ! -z "${AUTHOR}" ]] && \
-        str="${str}.SH AUTHOR\n${AUTHOR}" && \
-        [[ ! -z "${AUTHOR_EMAIL}" ]] && \
-        str="${str} <${AUTHOR_EMAIL}>\n" || str="${str}\n"
-    [[ ! -z "${SEE_ALSO}" ]] && \
-        str="${str}.SH \"SEE ALSO\"\n${SEE_ALSO}\n"
+    ! _is_empty "${FILES}" \
+        && str="${str}.SH FILES\n${FILES}\n"
+    ! _is_empty "${ENVIRONMENT}" \
+        && str="${str}.SH ENVIRONMENT\n${ENVIRONMENT}\n"
+    ! _is_empty "${EXIT_STATUS}" \
+        && str="${str}.SH \"EXIT STATUS\"\n${EXIT_STATUS}\n"
+    ! _is_empty "${EXAMPLES}" \
+        && str="${str}.SH EXAMPLES\n${EXAMPLES}\n"
+    ! _is_empty "${BUGS}" \
+        && str="${str}.SH BUGS\n${BUGS}\n"
+    ! _is_empty "${AUTHOR}" \
+        && str="${str}.SH AUTHOR\n${AUTHOR}" \
+        && ! _is_empty "${AUTHOR_EMAIL}" \
+        && str="${str} <${AUTHOR_EMAIL}>\n" \
+        || str="${str}\n"
+    ! _is_empty "${SEE_ALSO}" \
+        && str="${str}.SH \"SEE ALSO\"\n${SEE_ALSO}\n"
 
     # make the manpage
     printf "${str}" >> "./man/${SCRIPT}"
 }
 
-
 # function to print help and return
 function _print_help {
-    if [[ ${MAN_HELP} -ne 0 ]]; then
+    if ! _is_zero ${MAN_HELP}; then
         man "./man/${SCRIPT}"
     else
         echo && man "./man/${SCRIPT}" > "./man/${SCRIPT}.txt" && \
@@ -180,15 +224,20 @@ function _print_help {
 }
 
 
-####  INITIALIZATION  #####################################################
+####  INITIALIZATION  ################################################
 
 function _init {
+
+    # some working vars
+    local optix=
+    local opt=
+    local longopt=
 
     # initialize PARAM from command line
     PARAM=( "$@" )
 
     # initialize SELF as CMD
-    if [[ -z "${COMMANDS}" ]]; then
+    if _is_empty "${COMMANDS}"; then
         COMMANDS=( "self" )
     else
         COMMANDS=( "self" "${COMMANDS[@]}" )
@@ -196,18 +245,34 @@ function _init {
 
     CMD_HELP[self]="${SELF_HELP}"
     CMD_ARGS[self]="${SELF_ARGS}"
-    CMD_OPTS[self]="${SELF_OPTS}"
+
+    # using SELF_OPTS_NOARG?
+    if _is_empty "${SELF_OPTS_NOARG}"; then
+        CMD_OPTS[self]="${SELF_OPTS}"
+    else
+        CMD_OPTS[self]="${SELF_OPTS_NOARG} ${SELF_OPTS}"
+
+        # init SELF_SHORTOPTS_NOARG
+        local self_opts_noarg=( ${SELF_OPTS_NOARG} )
+
+        optix=0
+        while ! _is_empty "${self_opts_noarg[@]}"; do
+            SELF_SHORTOPTS_NOARG[$optix]=${self_opts_noarg[0]}
+            self_opts_noarg=( ${self_opts_noarg[@]:2} )
+            ((optix++))
+        done
+    fi
 
     # initialize CMD arrays and associative arrays
     for cmd in "${COMMANDS[@]}"; do
-        [[ -z "${CMD_OPTS[$cmd]}" ]] && continue
+        _is_empty "${CMD_OPTS[$cmd]}" && continue
 
         # init options
-        local opts=( ${CMD_OPTS[$cmd]} )
-        local optix=0
+        optix=0
+        opts=( ${CMD_OPTS[$cmd]} )
 
-        while [[ $optix -lt ${#opts[@]} ]]; do
-            local opt="${opts[$optix]}"
+        while _less_than $optix ${#opts[@]}; do
+            opt="${opts[$optix]}"
             CMD_SHORTOPTS[$cmd]="${CMD_SHORTOPTS[$cmd]} ${opt}"
             ((optix++))
             CMD_LONGOPTS[$opt]="${opts[$optix]}"
@@ -215,22 +280,21 @@ function _init {
         done
     done
 
-    if [[ ${#SELF_OPTARGS[@]} -ne 0 ]]; then
+    if ! _is_zero ${#SELF_OPTARGS[@]}; then
         self_opts=( ${CMD_SHORTOPTS[self]} )
         for opt in "${self_opts[@]}"; do
-            if [[ ! -z "${SELF_OPTARGS[$opt]}" ]]; then
+            if ! _is_empty "${SELF_OPTARGS[$opt]}"; then
                 CMD_OPTARGS[$opt]="${SELF_OPTARGS[$opt]}"
             fi
         done
     fi
 
-
     # generate manpage if DEBUG=1 or no manpage exists
-    [[ ! -z ${DEBUG} || ! -f "./man/${SCRIPT}" ]] && _gen_man
+    ! _is_empty ${DEBUG} || [[ ! -f "./man/${SCRIPT}" ]] && _gen_man
 }
 
 
-####  COMMAND-LINE PARSING  ###############################################
+####  COMMAND-LINE PARSING  ##########################################
 
 # utility function - parse to ARGS or OPTARGS
 function _set_arg {
@@ -240,7 +304,7 @@ function _set_arg {
     local arg=              # working variable
 
     # no quote then regular single word argument
-    if [[ "${PARAM[( PARAMIX-1 )]:0:1}" != '"' ]]; then
+    if ! _str_equal "${PARAM[( PARAMIX-1 )]:0:1}" \"; then
         arg="${PARAM[( PARAMIX-1 )]}"
         PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
@@ -251,15 +315,17 @@ function _set_arg {
         PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
         # get words in the middle (no end quote)
-        while [[ ${#PARAM[@]} -ne 0 ]] && \
-            [[ "${PARAM[( PARAMIX-1 )]:(-1)}" != '"' ]]
+        while ! _is_zero ${#PARAM[@]} \
+            && ! _str_equal "${PARAM[( PARAMIX-1 )]:(-1)}" \"
         do
             arg="${arg} ${PARAM[( PARAMIX-1 )]}"
             PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX})
         done
 
         # if end quote forgotten then err out
-        if [[ ${#PARAM[@]} -eq 0 && "${PARAM[( PARAMIX-1 )]:(-1)}" != '"' ]]; then
+        if _is_zero ${#PARAM[@]} \
+            && ! _str_equal "${PARAM[( PARAMIX-1 )]:(-1)}" \"
+        then
             _err; _exit_err "Imbalanced quotes in argument."
         fi
 
@@ -272,7 +338,7 @@ function _set_arg {
     if [[ $is_optargs -ne 1 ]]; then
         ARGS[$arg_key]="${arg}"
     else
-        if [[ -z "${#OPTARGS[@]}" ]]; then
+        if _is_empty "${#OPTARGS[@]}"; then
             OPTARGS[$arg_key]="${arg}"
         else
             OPTARGS[$arg_key]="${OPTARGS[$arg_key]} ${arg}"
@@ -280,14 +346,15 @@ function _set_arg {
     fi
 }
 
-
 # parse command (first argument) as you like ...
 function _parse_cmd {
-    [[ -z "${COMMANDS[@]}" ]] && return  # parse args and opts
+
+    # parse args and opts
+    _is_empty "${COMMANDS[@]}" && return
 
     # use regex matching for 1st param (command) since not complicated
-    if [[ "${COMMANDS[@]}" =~ "${PARAM[0]} " || \
-        "${COMMANDS[${#COMMANDS[@]}-1]}" == "${PARAM[0]}" ]]
+    if _in_array "${PARAM[0]}" COMMANDS[@] \
+        || _str_equal "${PARAM[0]}" "${COMMANDS[${#COMMANDS[@]}-1]}"
     then
         CMD="${PARAM[0]}"
         PARAM=( ${PARAM[@]:1} )
@@ -297,59 +364,76 @@ function _parse_cmd {
 
     # optional debugging block
     str="PARSE cmd:\n  cmd: ${CMD} "
-    [[ ! -z "${#PARAM[@]}" ]] && \
-        str="${str}+ [${PARAM[@]} ]\n" || str="${str}\n"
+    ! _is_empty "${#PARAM[@]}" \
+        && str="${str}+ [${PARAM[@]} ]\n" \
+        || str="${str}\n"
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
     # if arguments expected then print err & exit
-    if [[ ${#PARAM[@]} -eq 0 && ! -z "${CMD_ARGS[$CMD]}" ]]; then
+    if _is_zero ${#PARAM[@]} && ! _is_empty "${CMD_ARGS[$CMD]}"; then
         _err; _exit_err "Command arguments expected."
     fi
 
     # if no more params don't bother parsing args and opts
-    [[ ${#PARAM[@]} -ne 0 ]]
+    ! _is_zero ${#PARAM[@]}
 }
-
 
 # parse '-' prefixed options ...
 function _parse_opts {
-    [[ ${#CMD_OPTS[@]} -eq 0 && ${#CMD_ARGS[@]} -eq 0 ]] && return   # run cmd without args or opts
+
+   # run cmd without args or opts
+    _is_zero ${#CMD_OPTS[@]} && _is_zero ${#CMD_ARGS[@]} && return
 
     local optargs=
     local cmd_optargs=
+    local is_valid=
     local cmd_opts=( ${CMD_SHORTOPTS[$CMD]} )
 
     # debugging ...
     local str="PARSE opts:\n"
 
     # loop over PARAM and consume valid opts & optargs
-    while [[ $PARAMIX -le ${#PARAM[@]} || ${#PARAM[@]} -gt ${#CMD_ARGS[@]} ]]
+    while _less_than_or_equal $PARAMIX ${#PARAM[@]} \
+        || _less_than ${#CMD_ARGS[@]} ${#PARAM[@]}
     do
-        # Skip arguments if at beginning of CL
-        if [[ "${PARAM[$PARAMIX]:0:1}" != "-" ]]; then
+        # skip arguments if at beginning of CL
+        if ! _str_equal "${PARAM[$PARAMIX]:0:1}" "-"; then
             ((PARAMIX++))
             ((ARGIX++))
             continue
         fi
 
-        for opt in "${cmd_opts[@]}"
-        do
-            if [[ "-${opt}" == "${PARAM[$PARAMIX]}" ]] || \
-                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[$PARAMIX]}" ]]
+        # make sure given option is valid
+        if _str_equal "${PARAM[$PARAMIX]:0:2}" "--"; then
+            _in_array "${PARAM[$PARAMIX]:2}" CMD_LONGOPTS[@] \
+                && is_valid=true || is_valid=false
+        else
+            _in_array "${PARAM[$PARAMIX]:1}" cmd_opts[@] \
+                && is_valid=true || is_valid=false
+        fi
+
+        if [ $is_valid = false ]; then
+            _err; _exit_err "Invalid option given: ${PARAM[$PARAMIX]}"
+        fi
+
+        # we hit a valid option so parse it ...
+        for opt in "${cmd_opts[@]}"; do
+            if _str_equal "${PARAM[$PARAMIX]}" "-${opt}" \
+                || _str_equal "${PARAM[$PARAMIX]}" "--${CMD_LONGOPTS[$opt]}"
             then
                 OPTS=( ${OPTS[@]} ${opt} )
                 ((PARAMIX++))
                 PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
                 cmd_optargs=( ${CMD_OPTARGS[$opt]} )
 
-                if [[ ${#cmd_optargs[@]} -ne 0 ]]; then
+                if ! _is_zero ${#cmd_optargs[@]}; then
                     for optarg in "${cmd_optargs[@]}"; do
                         _set_arg $opt 1
                     done
 
                     optargs=( ${OPTARGS[$opt]} )
-                    if [ ${#cmd_optargs[@]} -gt ${#optargs[@]} ]; then
+                    if _greater_than ${#cmd_optargs[@]} ${#optargs[@]}; then
                         _err; _exit_err "Too few option arguments."
                     fi
                 fi
@@ -360,34 +444,43 @@ function _parse_opts {
         done
     done
 
-    # optional debugging ...
+    # debugging ...
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
-    PARAMIX=$ARGIX  # reset PARAMIX
+    # reset PARAM indexes before parsing args
+    PARAMIX=$ARGIX
     ARGIX=0
-    # we parse opts before args so if there are required args then return true
-    [[ ${#PARAM[@]} -ne 0 || ${#CMD_ARGS[@]} -ne 0 ]]
-}
 
+    # we parse opts before args so if there are required args then return true
+    ! _is_zero ${#PARAM[@]} || ! _is_zero ${#CMD_ARGS[@]}
+}
 
 # parse positional arguments as you like ...
 function _parse_args {
-    [[ ${#CMD_ARGS[@]} -eq 0 ]] && return   # no args defined at all
+
+    # no args defined at all
+    _is_zero ${#CMD_ARGS[@]} && return
 
     # get pos args for CMD
     cmd_args=( ${CMD_ARGS[$CMD]} )
 
     # return if no args defined for $CMD
-    [[ ${#cmd_args[@]} -eq 0 ]] && return
+    _is_zero ${#cmd_args[@]} && return
+
+    # return if any SELF_OPTS_NOARG given
+    if ! _is_empty "${OPTS[@]}"; then
+        for opt in "${OPTS[@]}"; do
+            _in_array $opt SELF_SHORTOPTS_NOARG[@] && return
+        done
+    fi
 
     # debugging ...
     str="PARSE args:\n"
 
     # find arg keys for given command & build $ARGS assoc array
     for arg in "${cmd_args[@]}"; do
-        [[ -z "${PARAM[0]}" ]] && break
-
+        _is_empty "${PARAM[0]}" && break
         _set_arg $arg 0
 
         # debugging ...
@@ -395,7 +488,7 @@ function _parse_args {
     done
 
     # if too few rem params for # of args for this command, then error
-    if [ ${#cmd_args[@]} -gt ${#ARGS[@]} ]; then
+    if _greater_than ${#cmd_args[@]} ${#ARGS[@]}; then
         _err;  _exit_err "Too few positional arguments."
     fi
 
@@ -404,26 +497,26 @@ function _parse_args {
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
-    [ ${#PARAM[@]} -ne 0 ]
+    ! _is_zero ${#PARAM[@]}
 }
-
 
 # parameters are $CMD, $ARGS and $OPTS
 function _run_params {
 
-    if [[ ${#PARAM[@]} -ne 0 ]]; then
+    if ! _is_zero ${#PARAM[@]}; then
         _err; _exit_err "Too many command line arguments."
     fi
 
     # debugging ...
     str="RUN params:\n  [${CMD}"
-    if [[ ! -z "${OPTS[@]}" ]]; then
+    if ! _is_empty "${OPTS[@]}"; then
         for opt in "${OPTS[@]}"; do
             str="${str}, -${opt}"
-            [[ ! -z "${OPTARGS[$opt]}" ]] && str="${str} ${OPTARGS[$opt]}"
+            ! _is_empty "${OPTARGS[$opt]}" \
+                && str="${str} ${OPTARGS[$opt]}"
         done
     fi
-    if [[ ! -z  "${ARGS[@]}" ]]; then
+    if ! _is_empty "${ARGS[@]}"; then
         for arg in "${ARGS[@]}"; do
             str="${str}, ${arg}"
         done
@@ -435,7 +528,7 @@ function _run_params {
 }
 
 
-####  MAIN  ###############################################################
+####  MAIN  ##########################################################
 
 function _main {
 
@@ -444,12 +537,13 @@ function _main {
     _parse_cmd && _parse_opts && _parse_args
 
     # error check
-    [ ${NOERR} -ne 0 ] && _print_help && \
-        _exit_err "Unable to parse command line."
+    ! _is_zero ${ERRNO} \
+        && _print_help \
+        && _exit_err "Unable to parse command line."
 
     # run the _run_CMD function with parsed params
     _run_params
 }
 
 _main "$@"
-exit ${NOERR}
+exit ${ERRNO}
