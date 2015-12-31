@@ -240,36 +240,31 @@ function _set_arg {
     local arg=              # working variable
 
     # no quote then regular single word argument
-    if [[ "${PARAM[$PARAMIX]:0:1}" != '"' ]]; then
+    if [[ "${PARAM[( PARAMIX-1 )]:0:1}" != '"' ]]; then
         arg="${PARAM[( PARAMIX-1 )]}"
         PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
     # quoted arguments (\"words lyrics\")
     else
         # get 1st word in quoted arg sans the initial quote
-        arg="${PARAM[$PARAMIX]:1}"
-        ((PARAMIX++))
+        arg="'${PARAM[( PARAMIX-1 )]:1}"
         PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
         # get words in the middle (no end quote)
         while [[ ${#PARAM[@]} -ne 0 ]] && \
-            [[ "${PARAM[$PARAMIX]:(-1)}" != '"' ]]
+            [[ "${PARAM[( PARAMIX-1 )]:(-1)}" != '"' ]]
         do
-            arg="${arg} ${PARAM[$PARAMIX]}"
-            ((PARAMIX++))
-            PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+            arg="${arg} ${PARAM[( PARAMIX-1 )]}"
+            PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX})
         done
 
         # if end quote forgotten then err out
-        if [[ ${#PARAM[@]} -eq 0 ]] && \
-            [[ "${PARAM[$PARAMIX]:(-1)}" != '"' ]]
-        then
-            err; _exit_err "Imbalanced quotes in argument."
+        if [[ ${#PARAM[@]} -eq 0 && "${PARAM[( PARAMIX-1 )]:(-1)}" != '"' ]]; then
+            _err; _exit_err "Imbalanced quotes in argument."
         fi
 
         # get last word sans end quote
-        arg="${arg} ${PARAM[$PARAMIX]%\"}"
-        ((PARAMIX++))
+        arg="${arg} ${PARAM[( PARAMIX-1 )]%\"}'"
         PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
     fi
 
