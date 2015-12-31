@@ -25,6 +25,8 @@ declare -A OPTARGS   # associative array of opt args
 
 # plus some definitions including sourcing user-configured stuff
 NOERR=0
+PARAMIX=0            # current index of $PARAM
+ARGIX=0              # current index of ARGS in PARAM
 
 SCRIPT=`basename $0`
 SCRIPT_SH="${SCRIPT}.sh"    # put your code in ${SCRIPT}.sh
@@ -234,38 +236,41 @@ function _init {
 function _set_arg {
 
     local arg_key=$1        # for either CMD_ARGS[cmd] or CMD_OPTARGS[opt]
-    local is_optargs=$2     # flag 1 if seting OPTARGS
+    local is_optargs=$2     # flag 1 if setting OPTARGS
     local arg=              # working variable
 
     # no quote then regular single word argument
-    if [[ "${PARAM[0]:0:1}" != '"' ]]; then
-        arg="${PARAM[0]}"
-        PARAM=( ${PARAM[@]:1} )
+    if [[ "${PARAM[$PARAMIX]:0:1}" != '"' ]]; then
+        arg="${PARAM[( PARAMIX-1 )]}"
+        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
     # quoted arguments (\"words lyrics\")
     else
         # get 1st word in quoted arg sans the initial quote
-        arg="${PARAM[0]:1}"
-        PARAM=( ${PARAM[@]:1} )
+        arg="${PARAM[$PARAMIX]:1}"
+        ((PARAMIX++))
+        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
 
         # get words in the middle (no end quote)
         while [[ ${#PARAM[@]} -ne 0 ]] && \
-            [[ "${PARAM[0]:(-1)}" != '"' ]]
+            [[ "${PARAM[$PARAMIX]:(-1)}" != '"' ]]
         do
-            arg="${arg} ${PARAM[0]}"
-            PARAM=( ${PARAM[@]:1} )
+            arg="${arg} ${PARAM[$PARAMIX]}"
+            ((PARAMIX++))
+            PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
         done
 
         # if end quote forgotten then err out
         if [[ ${#PARAM[@]} -eq 0 ]] && \
-            [[ "${PARAM[0]:(-1)}" != '"' ]]
+            [[ "${PARAM[$PARAMIX]:(-1)}" != '"' ]]
         then
             err; _exit_err "Imbalanced quotes in argument."
         fi
 
         # get last word sans end quote
-        arg="${arg} ${PARAM[0]%\"}"
-        PARAM=( ${PARAM[@]:1} )
+        arg="${arg} ${PARAM[$PARAMIX]%\"}"
+        ((PARAMIX++))
+        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
     fi
 
     # then set desired args array at $arg_key
@@ -283,10 +288,7 @@ function _set_arg {
 
 # parse command (first argument) as you like ...
 function _parse_cmd {
-    [[ ${#COMMANDS[@]} -eq 0 ]] && return  # parse args and opts
-
-    # TODO
-    echo "${COMMANDS[@]}"
+    [[ -z "${COMMANDS[@]}" ]] && return  # parse args and opts
 
     # use regex matching for 1st param (command) since not complicated
     if [[ "${COMMANDS[@]}" =~ "${PARAM[0]} " || \
@@ -311,43 +313,39 @@ function _parse_cmd {
     fi
 
     # if no more params don't bother parsing args and opts
-    [ ${#PARAM[@]} -eq 0 ]
+    [[ ${#PARAM[@]} -ne 0 ]]
 }
 
 
 # parse '-' prefixed options ...
 function _parse_opts {
-
-    # TODO
-    echo "Here"
-
     [[ ${#CMD_OPTS[@]} -eq 0 && ${#CMD_ARGS[@]} -eq 0 ]] && return   # run cmd without args or opts
 
     local optargs=
     local cmd_optargs=
-    local paramix=0
     local cmd_opts=( ${CMD_SHORTOPTS[$CMD]} )
 
     # debugging ...
     local str="PARSE opts:\n"
 
     # loop over PARAM and consume valid opts & optargs
-    while [[ ${#PARAM[@]} -gt 0 ]]
+    while [[ $PARAMIX -le ${#PARAM[@]} || ${#PARAM[@]} -gt ${#CMD_ARGS[@]} ]]
     do
         # Skip arguments if at beginning of CL
-        [[ "${PARAM[$paramix]:0:1}" != "-" ]] && echo ${PARAM[$paramix]} && ((paramix++)) && continue
+        if [[ "${PARAM[$PARAMIX]:0:1}" != "-" ]]; then
+            ((PARAMIX++))
+            ((ARGIX++))
+            continue
+        fi
 
         for opt in "${cmd_opts[@]}"
         do
-            if [[ "-${opt}" == "${PARAM[$paramix]}" ]] || \
-                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[$paramix]}" ]]
+            if [[ "-${opt}" == "${PARAM[$PARAMIX]}" ]] || \
+                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[$PARAMIX]}" ]]
             then
                 OPTS=( ${OPTS[@]} ${opt} )
-                PARAM=( ${PARAM[@]:1} )
-
-                # TODO
-                echo ${PARAM[@]}
-
+                ((PARAMIX++))
+                PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
                 cmd_optargs=( ${CMD_OPTARGS[$opt]} )
 
                 if [[ ${#cmd_optargs[@]} -ne 0 ]]; then
@@ -371,6 +369,8 @@ function _parse_opts {
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
+    PARAMIX=$ARGIX  # reset PARAMIX
+    ARGIX=0
     # we parse opts before args so if there are required args then return true
     [[ ${#PARAM[@]} -ne 0 || ${#CMD_ARGS[@]} -ne 0 ]]
 }
@@ -378,9 +378,6 @@ function _parse_opts {
 
 # parse positional arguments as you like ...
 function _parse_args {
-    # TODO
-    echo ${CMD_ARGS[@]}
-
     [[ ${#CMD_ARGS[@]} -eq 0 ]] && return   # no args defined at all
 
     # get pos args for CMD
@@ -401,10 +398,6 @@ function _parse_args {
         # debugging ...
         str="${str}  ${arg}=${ARGS[${arg}]}\n"
     done
-
-    # TODO
-    echo ${#ARGS[@]}
-    echo ${#cmd_args[@]}
 
     # if too few rem params for # of args for this command, then error
     if [ ${#cmd_args[@]} -gt ${#ARGS[@]} ]; then

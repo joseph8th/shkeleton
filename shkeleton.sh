@@ -39,7 +39,7 @@ SELF_OPTARGS[t]="SRCDIR TARGETDIR"
 # If not defining commands then leave blank: `COMMANDS=`
 
 #COMMANDS=( "skel" "fling" )    # array of strings
-SUBCOMMANDS=
+COMMANDS=
 
 # (1) 'skel' command with one arg, no opts
 
@@ -88,6 +88,8 @@ function _run_self {
                 ;;
         esac
     done
+
+    echo ${ARGS[@]}
 }
 
 # copy the skel directory and files to chosen destination
