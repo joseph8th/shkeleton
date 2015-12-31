@@ -205,7 +205,7 @@ function _init {
         local optix=0
 
         while [[ $optix -lt ${#opts[@]} ]]; do
-            opt="${opts[$optix]}"
+            local opt="${opts[$optix]}"
             CMD_SHORTOPTS[$cmd]="${CMD_SHORTOPTS[$cmd]} ${opt}"
             ((optix++))
             CMD_LONGOPTS[$opt]="${opts[$optix]}"
@@ -275,7 +275,7 @@ function _set_arg {
         if [[ -z "${#OPTARGS[@]}" ]]; then
             OPTARGS[$arg_key]="${arg}"
         else
-            OPTARGS[$arg_key]="${OPTARGS[@]} ${arg}"
+            OPTARGS[$arg_key]="${OPTARGS[$arg_key]} ${arg}"
         fi
     fi
 }
@@ -283,7 +283,10 @@ function _set_arg {
 
 # parse command (first argument) as you like ...
 function _parse_cmd {
-    [[ "${#COMMANDS[@]}" == "0" ]] && return   # parse args and opts
+    [[ ${#COMMANDS[@]} -eq 0 ]] && return  # parse args and opts
+
+    # TODO
+    echo "${COMMANDS[@]}"
 
     # use regex matching for 1st param (command) since not complicated
     if [[ "${COMMANDS[@]}" =~ "${PARAM[0]} " || \
@@ -308,29 +311,43 @@ function _parse_cmd {
     fi
 
     # if no more params don't bother parsing args and opts
-    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+    [ ${#PARAM[@]} -eq 0 ]
 }
 
 
 # parse '-' prefixed options ...
 function _parse_opts {
-    [[ ${#CMD_OPTS[@]} -eq 0 ]] && return   # run cmd with args & opts
 
+    # TODO
+    echo "Here"
+
+    [[ ${#CMD_OPTS[@]} -eq 0 && ${#CMD_ARGS[@]} -eq 0 ]] && return   # run cmd without args or opts
+
+    local optargs=
+    local cmd_optargs=
+    local paramix=0
     local cmd_opts=( ${CMD_SHORTOPTS[$CMD]} )
 
     # debugging ...
-    str="PARSE opts:\n"
+    local str="PARSE opts:\n"
 
     # loop over PARAM and consume valid opts & optargs
-    while [[ ${#PARAM[@]} -gt 0 ]] && [[ "${PARAM[0]:0:1}" == "-" ]]
+    while [[ ${#PARAM[@]} -gt 0 ]]
     do
+        # Skip arguments if at beginning of CL
+        [[ "${PARAM[$paramix]:0:1}" != "-" ]] && echo ${PARAM[$paramix]} && ((paramix++)) && continue
+
         for opt in "${cmd_opts[@]}"
         do
-            if [[ "-${opt}" == "${PARAM[0]}" ]] || \
-                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[0]}" ]]
+            if [[ "-${opt}" == "${PARAM[$paramix]}" ]] || \
+                [[ "--${CMD_LONGOPTS[$opt]}" == "${PARAM[$paramix]}" ]]
             then
                 OPTS=( ${OPTS[@]} ${opt} )
                 PARAM=( ${PARAM[@]:1} )
+
+                # TODO
+                echo ${PARAM[@]}
+
                 cmd_optargs=( ${CMD_OPTARGS[$opt]} )
 
                 if [[ ${#cmd_optargs[@]} -ne 0 ]]; then
@@ -338,7 +355,8 @@ function _parse_opts {
                         _set_arg $opt 1
                     done
 
-                    if [ ${#PARAM[@]} -lt ${#cmd_optargs[@]} ]; then
+                    optargs=( ${OPTARGS[$opt]} )
+                    if [ ${#cmd_optargs[@]} -gt ${#optargs[@]} ]; then
                         _err; _exit_err "Too few option arguments."
                     fi
                 fi
@@ -353,19 +371,23 @@ function _parse_opts {
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
-    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+    # we parse opts before args so if there are required args then return true
+    [[ ${#PARAM[@]} -ne 0 || ${#CMD_ARGS[@]} -ne 0 ]]
 }
 
 
 # parse positional arguments as you like ...
 function _parse_args {
-    [[ "${#CMD_ARGS[@]}" == "0" ]] && return   # no args defined at all
+    # TODO
+    echo ${CMD_ARGS[@]}
+
+    [[ ${#CMD_ARGS[@]} -eq 0 ]] && return   # no args defined at all
 
     # get pos args for CMD
     cmd_args=( ${CMD_ARGS[$CMD]} )
 
     # return if no args defined for $CMD
-    [[ "${#cmd_args[@]}" == "0" ]] && return
+    [[ ${#cmd_args[@]} -eq 0 ]] && return
 
     # debugging ...
     str="PARSE args:\n"
@@ -380,8 +402,12 @@ function _parse_args {
         str="${str}  ${arg}=${ARGS[${arg}]}\n"
     done
 
+    # TODO
+    echo ${#ARGS[@]}
+    echo ${#cmd_args[@]}
+
     # if too few rem params for # of args for this command, then error
-    if [[ ${#ARGS[@]} -lt ${#cmd_args[@]} ]]; then
+    if [ ${#cmd_args[@]} -gt ${#ARGS[@]} ]; then
         _err;  _exit_err "Too few positional arguments."
     fi
 
@@ -390,7 +416,7 @@ function _parse_args {
     str="${str}  rem params (${#PARAM[@]}): ${PARAM[@]}\n"
     _debug "${str}"
 
-    [[ "${#PARAM[@]}" == "0" ]] && return 1 || return 0
+    [ ${#PARAM[@]} -ne 0 ]
 }
 
 

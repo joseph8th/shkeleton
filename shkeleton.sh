@@ -2,14 +2,14 @@
 
 ####  CONFIGURABLES  ######################################################
 
-DEBUG=0
+DEBUG=1
 MAN_HELP=1    # 0=text help, 1=man help
 MAN_TYPE=1    # a command by man standards
-VERSION="0.2"
+VERSION="0.2b"
 
 # Author metadata
 AUTHOR="Joseph Edwards VIII"
-AUTHOR_EMAIL="joseph8th@notroot.us"
+AUTHOR_EMAIL="jedwards8th@gmail.com"
 
 # (0) SELF - The 'self' command. Has special status.
 #     (a) like `cp -r SRC DEST` - the script IS the command
@@ -21,36 +21,42 @@ SELF_NAME="${SCRIPT} \- CLI shell scripting for lazy people"
 # script summary long as you like
 SELF_HELP="A skeletal wireframe to speed development of command-line interface (CLI) executable bash scripts. Intended to speed coding for more than the simplest command-line scripts. Use whenever 'optargs' isn't enough, or when the number of parameters is too unwieldy for positional arguments, or when one doesn't feel like doing CLI argument parsing, at all."
 
-# SELF_OPTS
-
-SELF_OPTS="h help"       # pairwise short-long options ie, (-h, --help)
-SELF_OPTS_HELP[h]="print help message"
-
 # SELF_ARGS
 
-SELF_ARGS=    # string: if COMMANDS defined, then leave empty
+SELF_ARGS="POOP"    # string: if COMMANDS defined, then leave empty
+
+# SELF_OPTS
+
+SELF_OPTS="h help t target"       # pairwise short-long options ie, (-h, --help)
+SELF_OPTS_HELP[h]="print help message"
+SELF_OPTS_HELP[t]="target project path"
+
+# SELF_OPTARGS
+
+SELF_OPTARGS[t]="SRCDIR TARGETDIR"
 
 # COMMANDS - first argument commands can have arguments and options
 # If not defining commands then leave blank: `COMMANDS=`
 
-COMMANDS=( "skel" "fling" )    # array of strings
+#COMMANDS=( "skel" "fling" )    # array of strings
+SUBCOMMANDS=
 
 # (1) 'skel' command with one arg, no opts
 
-CMD_HELP[skel]="copy './skel' to DEST, where DEST is a new directory"
-CMD_ARGS[skel]="DEST"   # define both CMD_OPTS[CMD] and CMD_ARGS[CMD] for
+#CMD_HELP[skel]="copy './skel' to DEST, where DEST is a new directory"
+#CMD_ARGS[skel]="DEST"   # define both CMD_OPTS[CMD] and CMD_ARGS[CMD] for
 
 # (2) 'fling' command with two args, one opt -- a dummy command
 
-CMD_HELP[fling]="fling love from SRC at DEST"
-CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
-CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
+#CMD_HELP[fling]="fling love from SRC at DEST"
+#CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
+#CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
 
 # (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
 
-CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
-CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
-CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
+#CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
+#CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
+#CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
 # Additional manpage sections (optional)
 FILES="The 'skel' command copies files in './skel' directory (or the current scripts) to the given destination path, renaming them in the process."
@@ -73,6 +79,9 @@ function _run_self {
         case $opt in
             h)
                 _print_help
+                ;;
+            t)
+                echo ${OPTARGS[t]}
                 ;;
             *)
                 _print_help
