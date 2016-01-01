@@ -2,7 +2,7 @@
 
 ####  CONFIGURABLES  #################################################
 
-DEBUG=1
+DEBUG=0
 MAN_HELP=1    # 0=text help, 1=man help
 MAN_TYPE=1    # a command by man standards
 VERSION="1.0"
@@ -100,7 +100,7 @@ SEE_ALSO=
 
 # Must be named `_run_CMD` for each CMD in COMMANDS.
 # Define each CMD function below. All your logic goes here.
-# Use parsed CMD, OPTS[] with OPTARGS[opt], and ARGS[] here.
+# Use parsed CMD, OPTS[] with OPTARGS[opt], and ARGS[arg] here.
 
 # _run_self should always be defined and should minimally _print_help
 function _run_self {
