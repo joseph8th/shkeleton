@@ -106,11 +106,8 @@ function _gen_man {
     manf="./man/${SCRIPT}"
 
     # man page header data
-    printf '.\\"' > $manf
-    printf " Manpage for ${SCRIPT}.\n" >> $manf
-    printf '.\\"' >> $manf
-    printf " Contact ${EMAIL} to correct errors or typos.\n" >> $manf
-
+    str=".\\\\\" Manpage for ${SCRIPT}.\n"
+    str="${str}.\\\\\" Contact ${EMAIL} to correct errors or typos.\n"
     str="${str}.TH man ${MAN_TYPE} \"${today}\" \"${VERSION}\" \"${SCRIPT} man page\"\n"
 
     # name and usage (synopsis)
@@ -210,7 +207,7 @@ function _gen_man {
         && str="${str}.SH \"SEE ALSO\"\n${SEE_ALSO}\n"
 
     # make the manpage
-    printf "${str}" >> "./man/${SCRIPT}"
+    printf "${str}" > "./man/${SCRIPT}"
 }
 
 # function to print help and return
