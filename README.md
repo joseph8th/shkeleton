@@ -79,10 +79,6 @@ And this is *not* OK:
     ./shkeleton fling --poo "poopy farts" "litter box" "Phil Collins" "Batman and Robin"
 ```
 
-### Example of Self-as-Command
-
-The included `example-self-cmd` directory contains an `example-self-cmd.sh` configuration file that demonstrates how to properly use `shkeleton` in self-as-command mode. The `example-self-cmd` file is just a copy of `shkeleton` itself.
-
 ### Tips
 
 Read through both `shkeleton` files and try to understand how they work together before you start coding your new script. They are both heavily annotated and explain usage in greater detail, including the proper formatting for commands, options, arguments.
