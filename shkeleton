@@ -234,7 +234,7 @@ function _init {
     local longopt=
 
     # initialize PARAM from command line
-    PARAM=( "$@" )
+    PARAM=( "${@}" )
 
     # initialize SELF as CMD
     if _is_empty "${COMMANDS}"; then
@@ -296,6 +296,16 @@ function _init {
 
 ####  COMMAND-LINE PARSING  ##########################################
 
+# consume PARAM 1st to last for ARGS, or by array slice for OPTARGS
+function _consume_param {
+    local is_optargs=$1
+    if _is_zero $is_optargs; then
+        PARAM=( ${PARAM[@]:1} )
+    else
+        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+    fi
+}
+
 # utility function - parse to ARGS or OPTARGS
 function _set_arg {
 
@@ -304,22 +314,23 @@ function _set_arg {
     local arg=              # working variable
 
     # no quote then regular single word argument
-    if ! _str_equal "${PARAM[( PARAMIX-1 )]:0:1}" \"; then
+    if ! _str_equal "${PARAM[( PARAMIX-1 )]:0:1}" \"
+    then
         arg="${PARAM[( PARAMIX-1 )]}"
-        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+        _consume_param $is_optargs
 
     # quoted arguments (\"words lyrics\")
     else
         # get 1st word in quoted arg sans the initial quote
-        arg="'${PARAM[( PARAMIX-1 )]:1}"
-        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+        arg="\"${PARAM[( PARAMIX-1 )]:1}"
+        _consume_param $is_optargs
 
         # get words in the middle (no end quote)
         while ! _is_zero ${#PARAM[@]} \
             && ! _str_equal "${PARAM[( PARAMIX-1 )]:(-1)}" \"
         do
             arg="${arg} ${PARAM[( PARAMIX-1 )]}"
-            PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX})
+            _consume_param $is_optargs
         done
 
         # if end quote forgotten then err out
@@ -330,12 +341,12 @@ function _set_arg {
         fi
 
         # get last word sans end quote
-        arg="${arg} ${PARAM[( PARAMIX-1 )]%\"}'"
-        PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+        arg="${arg} ${PARAM[( PARAMIX-1 )]%\"}\""
+        _consume_param $is_optargs
     fi
 
     # then set desired args array at $arg_key
-    if [[ $is_optargs -ne 1 ]]; then
+    if _is_zero $is_optargs; then
         ARGS[$arg_key]="${arg}"
     else
         if _is_empty "${#OPTARGS[@]}"; then
@@ -382,25 +393,27 @@ function _parse_cmd {
 # parse '-' prefixed options ...
 function _parse_opts {
 
-   # run cmd without args or opts
+    # run cmd without args or opts
     _is_zero ${#CMD_OPTS[@]} && _is_zero ${#CMD_ARGS[@]} && return
 
     local optargs=
     local cmd_optargs=
     local is_valid=
+
+    local is_optargs=1
     local cmd_opts=( ${CMD_SHORTOPTS[$CMD]} )
+    local cmd_args=( ${CMD_ARGS[$CMD]} )
 
     # debugging ...
     local str="PARSE opts:\n"
 
     # loop over PARAM and consume valid opts & optargs
-    while _less_than_or_equal $PARAMIX ${#PARAM[@]} \
-        || _less_than ${#CMD_ARGS[@]} ${#PARAM[@]}
+    while _less_than_or_equal $PARAMIX ${#PARAM[@]}
     do
         # skip arguments if at beginning of CL
         if ! _str_equal "${PARAM[$PARAMIX]:0:1}" "-"; then
             ((PARAMIX++))
-            ((ARGIX++))
+            ((ARGIX++)) # for optarg array slicing purposes
             continue
         fi
 
@@ -424,12 +437,12 @@ function _parse_opts {
             then
                 OPTS=( ${OPTS[@]} ${opt} )
                 ((PARAMIX++))
-                PARAM=( ${PARAM[@]::$ARGIX} ${PARAM[@]:$PARAMIX} )
+                _consume_param $is_optargs
                 cmd_optargs=( ${CMD_OPTARGS[$opt]} )
 
                 if ! _is_zero ${#cmd_optargs[@]}; then
                     for optarg in "${cmd_optargs[@]}"; do
-                        _set_arg $opt 1
+                        _set_arg $opt $is_optargs
                     done
 
                     optargs=( ${OPTARGS[$opt]} )
@@ -437,6 +450,9 @@ function _parse_opts {
                         _err; _exit_err "Too few option arguments."
                     fi
                 fi
+
+                # Done setting args for this OPT, so decr to get next
+                ((PARAMIX--))
 
                 # debugging ...
                 str="${str}  opt: -${opt} ${OPTARGS[$opt]}\n"
@@ -449,11 +465,11 @@ function _parse_opts {
     _debug "${str}"
 
     # reset PARAM indexes before parsing args
-    PARAMIX=$ARGIX
+    PARAMIX=1
     ARGIX=0
 
     # we parse opts before args so if there are required args then return true
-    ! _is_zero ${#PARAM[@]} || ! _is_zero ${#CMD_ARGS[@]}
+    ! _is_zero ${#PARAM[@]} || ! _is_zero ${#cmd_args[@]}
 }
 
 # parse positional arguments as you like ...
@@ -463,7 +479,7 @@ function _parse_args {
     _is_zero ${#CMD_ARGS[@]} && return
 
     # get pos args for CMD
-    cmd_args=( ${CMD_ARGS[$CMD]} )
+    local cmd_args=( ${CMD_ARGS[$CMD]} )
 
     # return if no args defined for $CMD
     _is_zero ${#cmd_args[@]} && return
@@ -473,6 +489,11 @@ function _parse_args {
         for opt in "${OPTS[@]}"; do
             _in_array $opt SELF_SHORTOPTS_NOARG[@] && return
         done
+    fi
+
+    # if too few rem params for # of args for this command, then error
+    if _greater_than ${#cmd_args[@]} ${#PARAM[@]}; then
+        _err;  _exit_err "Too few positional arguments."
     fi
 
     # debugging ...
@@ -486,11 +507,6 @@ function _parse_args {
         # debugging ...
         str="${str}  ${arg}=${ARGS[${arg}]}\n"
     done
-
-    # if too few rem params for # of args for this command, then error
-    if _greater_than ${#cmd_args[@]} ${#ARGS[@]}; then
-        _err;  _exit_err "Too few positional arguments."
-    fi
 
     # optional debugging ...
     str="${str}  cmd args: $CMD ${cmd_args[@]}\n"
