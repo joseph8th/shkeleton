@@ -2,14 +2,14 @@
 
 ####  CONFIGURABLES  #################################################
 
-DEBUG=0
-MAN_HELP=1    # 0=text help, 1=man help
-MAN_TYPE=1    # a command by man standards
-VERSION="1.0"
+readonly DEBUG=0
+readonly MAN_HELP=1    # 0=text help, 1=man help
+readonly MAN_TYPE=1    # a command by man standards
+readonly VERSION="1.0"
 
 # Author metadata
-AUTHOR="Joseph Edwards VIII"
-AUTHOR_EMAIL="jedwards8th@gmail.com"
+readonly AUTHOR="Joseph Edwards VIII"
+readonly AUTHOR_EMAIL="jedwards8th@gmail.com"
 
 
 ####  SELF  ##########################################################
@@ -19,10 +19,10 @@ AUTHOR_EMAIL="jedwards8th@gmail.com"
 #   (b) like `git -b checkout BRANCH` - the script RUNS command
 
 # using man so prefix '-' with an escape '\'
-SELF_NAME="${SCRIPT} \- CLI shell scripting for lazy people"
+readonly SELF_NAME="${SCRIPT} \- CLI shell scripting for lazy people"
 
 # script summary long as you like
-SELF_HELP="A skeletal wireframe to speed development of command-line
+readonly SELF_HELP="A skeletal wireframe to speed development of command-line
 interface (CLI) executable bash scripts. Intended to speed coding for
 more than the simplest command-line scripts. Use whenever 'optargs'
 isn't enough, or when you want to use GNU style long arguments, or
@@ -31,20 +31,22 @@ arguments, or when the script(s) you're writing are already complex,
 or when you don't just feel like doing CL argument parsing."
 
 # SELF_ARGS - if COMMANDS defined, then define empty: `SELF_ARGS=`
-#SELF_ARGS="DEST POOP CRAP"
-SELF_ARGS=
+SELF_ARGS="DEST POOP CRAP"
+#SELF_ARGS=
 
 # SELF_OPTS_NOARG - singletons: ARGS ignored, and only 1st OPT parsed
 SELF_OPTS_NOARG="h help v version"
-SELF_OPTS_HELP[h]="print help message"
-SELF_OPTS_HELP[v]="print version information"
+SELF_OPTS_HELP=( \
+    [h]="print help message" \
+    [v]="print version information" \
+    )
 
 # SELF_OPTS - pairs short-long OPTS (ie, "t target" == -t, --target)
-#SELF_OPTS="f foo"
-#SELF_OPTS_HELP[f]="example self-as-command option"
+SELF_OPTS="f foo"
+SELF_OPTS_HELP[f]="example self-as-command option"
 
 # SELF_OPTARGS - string of positional option arguments
-#SELF_OPTARGS[f]="BAR BAZ"
+SELF_OPTARGS[f]="BAR BAZ"
 
 
 ####  COMMANDS  ######################################################
@@ -52,25 +54,25 @@ SELF_OPTS_HELP[v]="print version information"
 # Command mode: first parameter commands can have ARGS and OPTS.
 # If not defining commands then define empty: `COMMANDS=`
 
-COMMANDS=( "skel" "fling" )    # array of strings
-#COMMANDS=
+#COMMANDS=( "skel" "fling" )    # array of strings
+COMMANDS=
 
 # (1) 'skel' command with one arg, no opts
 
-CMD_HELP[skel]="create skeleton project in directory DEST"
-CMD_ARGS[skel]="DEST"
+#CMD_HELP[skel]="create skeleton project in directory DEST"
+#CMD_ARGS[skel]="DEST"
 
 # (2) 'fling' command with two args, one opt -- a dummy command
 
-CMD_HELP[fling]="fling love from SRC at DEST"
-CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
-CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
+#CMD_HELP[fling]="fling love from SRC at DEST"
+#CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
+#CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
 
 # (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
 
-CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
-CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
-CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
+#CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
+#CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
+#CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
 
 ####  OPTIONAL MANPAGE  ##############################################
