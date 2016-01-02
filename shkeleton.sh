@@ -55,7 +55,6 @@ SELF_OPTARGS[f]="BAR BAZ"
 # If not defining commands then define empty: `COMMANDS=`
 
 #COMMANDS=( "skel" "fling" )    # array of strings
-COMMANDS=
 
 # (1) 'skel' command with one arg, no opts
 

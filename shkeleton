@@ -2,6 +2,10 @@
 
 ####  DECLARATIONS  ##################################################
 
+# declare both SELF_ARGS and COMMANDS but *only use one or the other*
+SELF_ARGS=
+declare -a COMMANDS
+
 declare -A SELF_OPTS_HELP        # key: 'self' cmd short opt char
 declare -A SELF_OPTARGS          # key: ""
 declare -a SELF_SHORTOPTS_NOARG  # key: cmd short opt char
