@@ -77,25 +77,23 @@ COMMANDS=
 
 ####  OPTIONAL MANPAGE  ##############################################
 
-FILES="The 'skel' command copies files in './skel' directory (or the
+readonly FILES="The 'skel' command copies files in './skel' directory (or the
 current scripts) to the given destination path, renaming them in the
 process."
 
-ENVIRONMENT=
+readonly ENVIRONMENT=
 
-EXIT_STATUS="Exits with status \$ERRNO."
+readonly EXIT_STATUS="Exits with status \$ERRNO."
 
-EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
-
-EXAMPLE_02="${SCRIPT} fling -t -p poo dirt
+readonly EXAMPLE_01="${SCRIPT} skel /path/to/new/script"
+readonly EXAMPLE_02="${SCRIPT} fling -t -p poo dirt
 \(rs\"Phil Collins\(rs\" \(rs\"Batman and Robin\(rs\""
+readonly EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
 
-EXAMPLES="\&${EXAMPLE_01}\n\n\&${EXAMPLE_02}"
-
-BUGS="Quotes must be escaped for multiple word arguments. Only double
+readonly BUGS="Quotes must be escaped for multiple word arguments. Only double
 quotes are supported."
 
-SEE_ALSO=
+readonly SEE_ALSO=
 
 
 ####  COMMAND FUNCTIONS  #############################################
