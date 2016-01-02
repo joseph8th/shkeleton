@@ -29,7 +29,8 @@ ERRNO=0
 PARAMIX=0            # current index of $PARAM
 ARGIX=0              # current index of ARGS in PARAM
 
-readonly SCRIPT=`basename $0`
+readonly SCRIPT=$(basename $0)
+readonly SCRIPT_DIR=$(readlink -m $(dirname $0))
 readonly SCRIPT_SH="${SCRIPT}.sh"    # put your code in ${SCRIPT}.sh
 source "${SCRIPT_SH}"
 
