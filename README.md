@@ -20,8 +20,10 @@ Basically, I wanted something more like Python's `argparse` for `bash`.
 
 ## Install
 
+```bash
     git clone git@github.com:joseph8th/shkeleton.git
     cd shkeleton
+```
 
 ## Quickstart
 
