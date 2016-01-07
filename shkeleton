@@ -82,6 +82,10 @@ function _str_equal {
     [[ "$str1" == "$str2" ]]
 }
 
+function _trim {
+    echo "$1" | sed -n '1h;1!H;${;g;s/^[ \t]*//g;s/[ \t]*$//g;p;}'
+}
+
 # error handling
 function _err {
     ((ERRNO++))
