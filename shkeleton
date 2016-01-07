@@ -2,6 +2,10 @@
 
 ####  DECLARATIONS  ##################################################
 
+# declare both SELF_ARGS and COMMANDS but *only use one or the other*
+SELF_ARGS=
+declare -a COMMANDS
+
 declare -A SELF_OPTS_HELP        # key: 'self' cmd short opt char
 declare -A SELF_OPTARGS          # key: ""
 declare -a SELF_SHORTOPTS_NOARG  # key: cmd short opt char
@@ -29,7 +33,8 @@ ERRNO=0
 PARAMIX=0            # current index of $PARAM
 ARGIX=0              # current index of ARGS in PARAM
 
-readonly SCRIPT=`basename $0`
+readonly SCRIPT=$(basename $0)
+readonly SCRIPT_DIR=$(readlink -m $(dirname $0))
 readonly SCRIPT_SH="${SCRIPT}.sh"    # put your code in ${SCRIPT}.sh
 source "${SCRIPT_SH}"
 
@@ -75,6 +80,10 @@ function _str_equal {
     local str1=$1; shift
     local str2=$1
     [[ "$str1" == "$str2" ]]
+}
+
+function _trim {
+    echo "$1" | sed -n '1h;1!H;${;g;s/^[ \t]*//g;s/[ \t]*$//g;p;}'
 }
 
 # error handling
