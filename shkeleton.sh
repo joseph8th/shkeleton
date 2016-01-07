@@ -31,8 +31,7 @@ arguments, or when the script(s) you're writing are already complex,
 or when you don't just feel like doing CL argument parsing."
 
 # SELF_ARGS - if COMMANDS defined, then define empty: `SELF_ARGS=`
-SELF_ARGS="DEST POOP CRAP"
-#SELF_ARGS=
+#SELF_ARGS="DEST POOP CRAP"
 
 # SELF_OPTS_NOARG - singletons: ARGS ignored, and only 1st OPT parsed
 SELF_OPTS_NOARG="h help v version"
@@ -54,24 +53,24 @@ SELF_OPTARGS[f]="BAR BAZ"
 # Command mode: first parameter commands can have ARGS and OPTS.
 # If not defining commands then define empty: `COMMANDS=`
 
-#COMMANDS=( "skel" "fling" )    # array of strings
+COMMANDS=( "skel" "fling" )    # array of strings
 
 # (1) 'skel' command with one arg, no opts
 
-#CMD_HELP[skel]="create skeleton project in directory DEST"
-#CMD_ARGS[skel]="DEST"
+CMD_HELP[skel]="create skeleton project in directory DEST"
+CMD_ARGS[skel]="DEST"
 
 # (2) 'fling' command with two args, one opt -- a dummy command
 
-#CMD_HELP[fling]="fling love from SRC at DEST"
-#CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
-#CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
+CMD_HELP[fling]="fling love from SRC at DEST"
+CMD_ARGS[fling]="SRC DEST"    # space-separated string of positional args
+CMD_OPTS[fling]="p poo t toss"    # string of pairwise short-long opts
 
 # (2.1) if CMD_OPTS[CMD] defined, optionally define optargs w opt keys
 
-#CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
-#CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
-#CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
+CMD_OPTARGS[p]="POO BAH"         # option args space-separated string
+CMD_OPTS_HELP[p]="SRC instead flings POO at DEST"
+CMD_OPTS_HELP[t]="SRC instead tosses at DEST"
 
 
 ####  OPTIONAL MANPAGE  ##############################################
